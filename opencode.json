@@ -1,0 +1,15 @@
+{
+  "$schema": "https://opencode.ai/config.json",
+  "model": "zen-proxy/mimo-v2.6-flash-free",
+  "mcp": {
+    "playwright": {
+      "type": "local",
+      "command": [
+        "bash",
+        "./scripts/playwright-mcp-brave.sh"
+      ],
+      "enabled": true,
+      "timeout": 15000
+    }
+  }
+}

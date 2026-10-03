@@ -1,0 +1,38 @@
+# Ronda 2 — 30 URLs nuevas (audio/listening + motores diversos)
+# Formato: una URL por línea; "#" comenta.
+
+# --- Inglés con AUDIO / listening (10) ---
+https://www.talkdrill.com/games/listening-quiz/
+https://www.englishclub.com/esl-quizzes/listening/
+https://7esl.com/listening/
+https://myenglishquiz.org/listening
+https://test-english.com/listening/
+https://ielts-up.com/listening/multiple-choice.html
+https://www.testme.com/english-listening-test
+https://englishtest-online.com/listening
+https://www.oxfordonlineenglish.com/english-level-test/listening
+https://allthingsielts.com/ielts-listening/practice-tests.php
+
+# --- Tech/MCQ motores variados (11) ---
+https://www.geeksforgeeks.org/quizzes/
+https://www.geeksforgeeks.org/quizzes/java/
+https://www.geeksforgeeks.org/quizzes/python/
+https://www.examveda.com/java-questions-answers/
+https://javatpoint.com/java-mcq
+https://www.w3schools.com/php/php_quiz.asp
+https://www.w3schools.com/git/git_quiz.asp
+https://www.w3schools.com/react/react_quiz.asp
+https://www.w3schools.com/datatypes/datatypes_quiz.asp
+https://www.w3schools.com/aws/aws_quiz.asp
+https://www.fatskills.com/computer-repair/quiz/
+
+# --- Plataformas / visuales / LMS (9) ---
+https://www.proprofs.com/quiz-school/story.php?title=NzA3NTc00DVW
+https://www.proprofs.com/quiz-school/
+https://resources.quizalize.com/view/quiz/networking-tools-and-cable-quiz-f2628026-77e7-42e3-9e9f-76c7ebd59674
+https://wayground.com/admin/quiz/6970d656ff4fed84ce2c2890/networking-hardware
+https://wayground.com/admin/quiz/69b3415468070aaecb0bc515/computer-network-hardware-components-matching
+https://learnenglish.britishcouncil.org/skills/listening/a1-listening
+https://www.bbc.co.uk/learningenglish/english/features/6-minute-english
+https://www.eslfast.com/easytests/
+https://www.perfect-english-grammar.com/exercise/

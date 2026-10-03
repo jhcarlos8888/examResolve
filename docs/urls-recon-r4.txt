@@ -1,0 +1,31 @@
+# Ronda 4 — 24 URLs (SQL/BD, matemáticas/estadística, redes, entrevistas, inglés)
+
+# --- Bases de datos / SQL (9) ---
+https://www.sqlmentor.in/quiz
+https://codescracker.com/exam/showtest.php?subid=7
+https://sqlquest.app/sql-quiz/
+https://sqlquiz.github.io
+https://javacodepoint.com/quizzes/sql-quiz-test-online-random-questions/
+https://www.tutorialspoint.com/sql/sql_online_quiz.htm
+https://neotechnavigators.com/sql-quiz/
+https://fivesql.com/quiz.html
+https://sqlquiz.com
+
+# --- Matemáticas / estadística (6) ---
+https://testlabapp.com/practice/statistics-probability
+https://math-questions.com/probability-and-statistics/statistics-practice-test.php
+https://math-questions.com/exam-style/probability-and-statistics-practice-test.php
+https://gokwiz.com/quiz/statistics-and-probability
+https://www.varsitytutors.com/practice/subjects/statistics/practice
+https://itfeature.com/statistics-mcqs-with-answers/
+
+# --- Aptitud / entrevistas / redes / inglés / otros (9) ---
+https://www.indiabix.com/aptitude/average/
+https://www.testdome.com/samples
+https://www.9tut.com/
+https://www.mathsisfun.com/tests/
+https://www.englishclub.com/esl-quizzes/
+https://www.myenglishquiz.org/grammar
+https://www.certification-questions.com/
+https://www.examtopics.com/
+https://www.geeksforgeeks.org/quizzes/dbms/

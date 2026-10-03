@@ -1,0 +1,21 @@
+# Ronda 6 — 14 URLs (SENA, CUN, Colombia, Java/BD extras)
+
+# --- SENA / Colombia (6) ---
+https://ejecucionformacion.sena.edu.co/placement_test/
+https://simuladorpruebasena.web.app
+https://es.educaplay.com/recursos-educativos/3610808-simulacro_sena.html
+https://wayground.com/admin/quiz/5f85bf90ff73ba001c8cc520/cuestionario-sena
+https://www.daypo.com/cuestionario-sena.html
+https://www.educaplay.com/learning-resources/2393880-prueba_de_conocimiento_sena_ingles_guia_1.html
+
+# --- CUN / admisiones Colombia (4) ---
+https://cun.edu.co/aspirantes/
+https://plataformas.cun.edu.co/aspirantes/
+https://examenes.lat/co/
+https://es.open-exam-prep.com/practica/examen-unal-colombia
+
+# --- Tech / pendientes r4 (4) ---
+https://javacodepoint.com/quizzes/
+https://testlabapp.com/practice/html
+https://www.examveda.com/java-mcqs/
+https://www.certification-questions.com/

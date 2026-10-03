@@ -1,0 +1,12 @@
+{
+  "name": "examresolve",
+  "private": true,
+  "type": "module",
+  "description": "Herramientas del agente resolutor de exámenes (reconocimiento de páginas)",
+  "scripts": {
+    "recon": "node scripts/recon.mjs"
+  },
+  "dependencies": {
+    "playwright-core": "^1.63.0"
+  }
+}

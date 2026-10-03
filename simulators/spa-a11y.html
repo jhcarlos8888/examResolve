@@ -1,0 +1,95 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>SPA con accesibilidad reducida</title>
+  <style>
+    body{font-family:system-ui,sans-serif;max-width:860px;margin:40px auto;padding:0 20px;background:#0f172a;color:#e2e8f0;line-height:1.5}
+    .card{background:#1e293b;padding:28px;border-radius:16px;border:1px solid #334155}
+    h1{margin-top:0}
+    .opt{display:block;margin:12px 0;padding:14px;border:1px solid #475569;border-radius:10px;cursor:pointer;background:#0f172a;user-select:none}
+    .opt:hover{border-color:#38bdf8;background:#16233a}
+    .opt.sel{border-color:#38bdf8;background:#1d4ed833;outline:2px solid #38bdf8}
+    button{padding:11px 18px;border:0;border-radius:10px;cursor:pointer;background:#38bdf8;color:#0f172a;font-weight:700}
+    button:disabled{opacity:.4;cursor:not-allowed}
+    .nav{margin-top:20px}
+    #result{margin-top:18px;font-weight:700;color:#4ade80}
+    .muted{color:#94a3b8}
+    .prog{font-size:.85rem;color:#7dd3fc;margin-bottom:6px}
+  </style>
+</head>
+<body>
+<div class="card">
+  <h1>Panel técnico (componente custom)</h1>
+  <p class="muted">Componente de preguntas construido con divs y listeners propios: los textos de las opciones están ocultos para el árbol de accesibilidad. Una pregunta por vista.</p>
+  <div class="prog" id="prog"></div>
+  <div id="question"></div>
+  <div id="options"></div>
+  <div class="nav"><button id="next">Siguiente</button></div>
+  <div id="result"></div>
+</div>
+<script>
+const questions=[
+  { q:'¿Qué protocolo usa HTTPS por debajo de HTTP?',
+    a:['TLS','SSH','FTP','SMTP'], c:0 },
+  { q:'¿Cuál de estos es un motor de base de datos NoSQL?',
+    a:['PostgreSQL','MongoDB','MySQL','MariaDB'], c:1 },
+  { q:'¿Qué significa SQL?',
+    a:['Structured Query Language','Simple Query Logic','Sequential Query Language','System Query Layer'], c:0 },
+  { q:'¿Qué índice de complejidad tiene la búsqueda binaria?',
+    a:['O(n)','O(n log n)','O(log n)','O(1)'], c:2 }
+];
+let i=0, selected=null, finished=false;
+const state={ index:0, selected:null, finished:false, score:null };
+window.__quizState=state;
+
+const qEl=document.getElementById('question');
+const oEl=document.getElementById('options');
+const prog=document.getElementById('prog');
+const next=document.getElementById('next');
+const result=document.getElementById('result');
+
+function render(){
+  selected=null; state.selected=null; state.index=i;
+  const item=questions[i];
+  prog.textContent=`Pregunta ${i+1} de ${questions.length}`;
+  qEl.innerHTML=`<h2 id="q-title">${item.q}</h2>`;
+  oEl.innerHTML=item.a.map((x,j)=>
+    `<div class="opt" data-j="${j}"><span aria-hidden="true">${String.fromCharCode(65+j)}) ${x}</span></div>`).join('');
+  [...oEl.querySelectorAll('.opt')].forEach(el=>{
+    el.addEventListener('click',()=>{
+      [...oEl.querySelectorAll('.opt')].forEach(o=>o.classList.remove('sel'));
+      el.classList.add('sel');
+      selected=Number(el.dataset.j);
+      state.selected=selected;
+      next.disabled=false;
+    });
+  });
+  next.disabled=true;
+  next.textContent=i===questions.length-1?'Finalizar':'Siguiente';
+  result.textContent='';
+}
+
+next.addEventListener('click',()=>{
+  if(selected===null) return;
+  state.answers=state.answers||[];
+  state.answers[i]=selected;
+  if(i===questions.length-1){
+    const score=questions.reduce((acc,item,qi)=>acc+(state.answers[qi]===item.c?1:0),0);
+    finished=true; state.finished=true; state.score=score;
+    qEl.innerHTML='<h2 id="q-title">Panel completado</h2>';
+    oEl.innerHTML='';
+    next.disabled=true;
+    prog.textContent='';
+    result.textContent=`Resultado: ${score}/${questions.length}`;
+    return;
+  }
+  i++;
+  render();
+});
+
+render();
+</script>
+</body>
+</html>

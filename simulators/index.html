@@ -1,0 +1,85 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Simulador técnico</title>
+  <style>
+    body{font-family:system-ui,sans-serif;max-width:860px;margin:40px auto;padding:0 20px;line-height:1.5;background:#f6f7f9}
+    .card{background:#fff;padding:28px;border-radius:16px;box-shadow:0 8px 30px rgba(0,0,0,.08)}
+    .option{display:block;margin:12px 0;padding:12px;border:1px solid #ddd;border-radius:10px;cursor:pointer}
+    button{padding:11px 18px;border:0;border-radius:10px;cursor:pointer}
+    #result{margin-top:20px;font-weight:700}
+    .muted{color:#666}
+  </style>
+</head>
+<body>
+<div class="card">
+  <h1>Simulador técnico</h1>
+  <p class="muted">Página local de prueba para validar OpenCode + Playwright MCP + Brave.</p>
+  <div id="question"></div>
+  <div id="options"></div>
+  <button id="next">Siguiente</button>
+  <div id="result"></div>
+</div>
+<script>
+const questions = [
+  {
+    q: '¿Qué patrón de diseño permite cambiar un algoritmo independientemente de los clientes que lo utilizan?',
+    a: ['Singleton','Strategy','Factory Method','Decorator'],
+    c: 1
+  },
+  {
+    q: 'En Spring Boot, ¿qué anotación se utiliza habitualmente para declarar un componente de servicio?',
+    a: ['@Service','@Entity','@RepositoryOnly','@BeanOnly'],
+    c: 0
+  },
+  {
+    q: '¿Qué mecanismo HTTP representa mejor una operación idempotente de actualización completa?',
+    a: ['POST','PATCH','PUT','CONNECT'],
+    c: 2
+  },
+  {
+    q: '¿Qué estructura de datos sigue el principio FIFO?',
+    a: ['Stack','Queue','Tree','Heap'],
+    c: 1
+  },
+  {
+    q: '¿Cuál es una propiedad característica de un JWT?',
+    a: ['Siempre requiere una sesión almacenada en servidor','Puede transportar claims firmados','Solo funciona con SOAP','Nunca puede expirar'],
+    c: 1
+  }
+];
+let i=0, score=0, answered=false;
+const qEl=document.getElementById('question');
+const oEl=document.getElementById('options');
+const next=document.getElementById('next');
+const result=document.getElementById('result');
+function render(){
+  answered=false;
+  result.textContent='';
+  next.textContent=i===questions.length-1?'Finalizar':'Siguiente';
+  const item=questions[i];
+  qEl.innerHTML=`<h2>Pregunta ${i+1} de ${questions.length}</h2><p>${item.q}</p>`;
+  oEl.innerHTML=item.a.map((x,j)=>`<label class="option"><input type="radio" name="answer" value="${j}"> ${String.fromCharCode(65+j)}) ${x}</label>`).join('');
+}
+next.addEventListener('click',()=>{
+  const selected=document.querySelector('input[name="answer"]:checked');
+  if(!selected){result.textContent='Selecciona una respuesta.';return;}
+  const val=Number(selected.value);
+  if(!answered && val===questions[i].c) score++;
+  answered=true;
+  if(i===questions.length-1){
+    qEl.innerHTML='<h2>Simulacro terminado</h2>';
+    oEl.innerHTML='';
+    next.disabled=true;
+    result.textContent=`Resultado: ${score}/${questions.length}`;
+    return;
+  }
+  i++;
+  render();
+});
+render();
+</script>
+</body>
+</html>

@@ -1,0 +1,34 @@
+# Ronda 3 — 23 URLs (IELTS/transcript, motores nuevos, trivia, ejercicios)
+
+# --- IELTS / listening con transcript o scoring (7) ---
+https://www.prepask.com/ielts/listening
+https://computerielts.com/ielts-listening-practice-test/
+https://ieltsactualtests.com/listening
+https://tryielts.com/test/ielts-listening-full-test.html
+https://oneielts.com/ielts-listening/practice
+https://www.ieltsbuddy.com/ielts-practice-tests.html
+https://engnovate.com/ielts-listening-tests/
+
+# --- W3Schools quizzes varios (motor conocido, buen para modos) (3) ---
+https://www.w3schools.com/python/python_quiz.asp
+https://www.w3schools.com/css/css_quiz.asp
+https://www.w3schools.com/python/python_exercises.asp
+
+# --- Trivia / motores clásicos nuevos (5) ---
+https://www.jetpunk.com/quizzes
+https://www.funtrivia.com/quizzes/
+https://www.seterra.com/en/online/geography-quizzes
+https://www.esl-lounge.com/
+
+# --- Otros MCQ / plataformas (5) ---
+https://www.w3resource.com/python-exercises/
+https://www.hackerrank.com/domains/sql
+https://www.gkseries.com/
+https://www.itprotoday.com/
+https://www.geeksforgeeks.org/quizzes/computer-graphics/
+
+# --- Español / edu (4) ---
+https://www.recursostic.es/
+https://www.educaixa.org/
+https://html5.laboratoriotec.es/
+https://test-online.es/

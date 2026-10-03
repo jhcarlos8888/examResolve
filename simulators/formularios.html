@@ -1,0 +1,172 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Cuestionario de formularios</title>
+  <style>
+    body{font-family:system-ui,sans-serif;max-width:860px;margin:40px auto;padding:0 20px;line-height:1.5;background:#f6f7f9}
+    .card{background:#fff;padding:28px;border-radius:16px;box-shadow:0 8px 30px rgba(0,0,0,.08)}
+    .option{display:block;margin:12px 0;padding:12px;border:1px solid #ddd;border-radius:10px;cursor:pointer}
+    .option:hover{border-color:#888}
+    select,input[type=text]{padding:10px;border:1px solid #ccc;border-radius:8px;font-size:1rem;width:100%;box-sizing:border-box}
+    button{padding:11px 18px;border:0;border-radius:10px;cursor:pointer;background:#2563eb;color:#fff;font-weight:600}
+    button.secondary{background:#e5e7eb;color:#111}
+    button:disabled{opacity:.4;cursor:not-allowed}
+    .nav{display:flex;gap:10px;justify-content:space-between;margin-top:22px}
+    #result{margin-top:20px;font-weight:700}
+    .muted{color:#666}
+    .tipo{display:inline-block;background:#eef2ff;color:#3730a3;border-radius:999px;padding:2px 10px;font-size:.8rem;margin-left:8px}
+    #feedback{margin-top:14px;padding:10px 14px;border-radius:8px;font-weight:600}
+    .ok{background:#ecfdf5;color:#065f46}
+    .bad{background:#fef2f2;color:#991b1b}
+  </style>
+</head>
+<body>
+<div class="card">
+  <h1>Cuestionario de formularios</h1>
+  <p class="muted">Tipos mixtos: opción única, varias correctas, desplegable, verdadero/falso y respuesta corta. Una pregunta por página.</p>
+  <div id="question"></div>
+  <div id="controls"></div>
+  <div id="feedback"></div>
+  <div class="nav">
+    <button id="prev" class="secondary">Anterior</button>
+    <button id="next">Siguiente</button>
+  </div>
+  <div id="result"></div>
+</div>
+<script>
+const questions = [
+  {
+    tipo:'Opción única',
+    q:'¿Qué anotación marca una clase como componente de repositorio en Spring Data?',
+    type:'radio',
+    a:['@Repository','@Component','@RestController','@Configuration'],
+    c:[0]
+  },
+  {
+    tipo:'Opción única',
+    q:'¿Qué código de estado HTTP devuelve un recurso que no existe?',
+    type:'radio',
+    a:['201','301','404','500'],
+    c:[2]
+  },
+  {
+    tipo:'Varias correctas',
+    q:'Selecciona TODOS los tipos de pruebas típicos de un proyecto Spring Boot:',
+    type:'checkbox',
+    a:['Unitarias (JUnit)','De integración','End-to-end (E2E)','Ninguna, no se prueban'],
+    c:[0,1,2]
+  },
+  {
+    tipo:'Desplegable',
+    q:'¿Qué herramienta de build usa el inicializador de Spring Boot por defecto?',
+    type:'select',
+    a:['Maven','Gradle','Ant','Bazel'],
+    c:[0]
+  },
+  {
+    tipo:'Verdadero/Falso',
+    q:'Una instancia de bean con alcance singleton es única por contenedor de aplicación.',
+    type:'radio',
+    a:['Verdadero','Falso'],
+    c:[0]
+  },
+  {
+    tipo:'Respuesta corta',
+    q:'¿Qué formato de archivo empaqueta una aplicación Spring Boot ejecutable con servidor embebido? (responde con el formato, p.ej. "xxx")',
+    type:'text',
+    a:[],
+    c:['jar']
+  }
+];
+let i=0, answered=false, finished=false;
+const answers=Array(questions.length).fill(null);
+const qEl=document.getElementById('question');
+const cEl=document.getElementById('controls');
+const fb=document.getElementById('feedback');
+const prev=document.getElementById('prev');
+const next=document.getElementById('next');
+const result=document.getElementById('result');
+
+function render(){
+  answered=finished?true:false;
+  fb.textContent=''; fb.className='';
+  const item=questions[i];
+  qEl.innerHTML=`<h2>Pregunta ${i+1} de ${questions.length}<span class="tipo">${item.tipo}</span></h2><p>${item.q}</p>`;
+  if(item.type==='radio'){
+    cEl.innerHTML=item.a.map((x,j)=>
+      `<label class="option"><input type="radio" name="q" value="${j}" ${answers[i]&&answers[i].includes(j)?'checked':''}> ${String.fromCharCode(65+j)}) ${x}</label>`).join('');
+  }else if(item.type==='checkbox'){
+    cEl.innerHTML=item.a.map((x,j)=>
+      `<label class="option"><input type="checkbox" name="q" value="${j}" ${answers[i]&&answers[i].includes(j)?'checked':''}> ${String.fromCharCode(65+j)}) ${x}</label>`).join('');
+  }else if(item.type==='select'){
+    cEl.innerHTML=`<select id="sel"><option value="">-- Selecciona --</option>`+
+      item.a.map((x,j)=>`<option value="${j}" ${answers[i]&&answers[i][0]===j?'selected':''}>${String.fromCharCode(65+j)}) ${x}</option>`).join('')+`</select>`;
+  }else if(item.type==='text'){
+    cEl.innerHTML=`<input type="text" id="txt" placeholder="Escribe tu respuesta" value="${answers[i]?answers[i][0]:''}">`;
+  }
+  prev.disabled=i===0;
+  next.textContent=i===questions.length-1?'Enviar':'Siguiente';
+}
+
+function collect(){
+  const item=questions[i];
+  if(item.type==='radio'){
+    const r=cEl.querySelector('input:checked');
+    if(!r) return null;
+    return [Number(r.value)];
+  }
+  if(item.type==='checkbox'){
+    const rs=[...cEl.querySelectorAll('input:checked')].map(x=>Number(x.value));
+    return rs.length?rs:null;
+  }
+  if(item.type==='select'){
+    const s=cEl.querySelector('#sel');
+    return s.value===''?null:[Number(s.value)];
+  }
+  if(item.type==='text'){
+    const t=cEl.querySelector('#txt').value.trim();
+    return t?[t]:null;
+  }
+}
+
+function grade(){
+  let score=0;
+  questions.forEach((item,qi)=>{
+    const given=answers[qi];
+    if(!given) return;
+    if(item.type==='text'){
+      if(given[0].toLowerCase().includes('jar')) score++;
+    }else{
+      const want=[...item.c].sort().join(',');
+      const got=[...given].sort().join(',');
+      if(want===got) score++;
+    }
+  });
+  return score;
+}
+
+next.addEventListener('click',()=>{
+  const got=collect();
+  if(!got){ fb.textContent='Selecciona o escribe una respuesta antes de continuar.'; fb.className='bad'; return; }
+  answers[i]=got;
+  if(i===questions.length-1){
+    finished=true;
+    const score=grade();
+    qEl.innerHTML='<h2>Simulacro terminado</h2>';
+    cEl.innerHTML='';
+    next.disabled=true; prev.disabled=true;
+    result.textContent=`Resultado: ${score}/${questions.length}`;
+    return;
+  }
+  i++;
+  render();
+});
+
+prev.addEventListener('click',()=>{ if(i>0){ i--; render(); } });
+
+render();
+</script>
+</body>
+</html>

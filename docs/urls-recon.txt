@@ -1,0 +1,41 @@
+# URLs candidatas para reconocimiento de exámenes (docs/pruebas-reales.md)
+# Una por línea; "#" comenta. Generado/validado con búsquedas web reales.
+
+# --- Motor W3Schools (paginado; Java ya validado 25/25) ---
+https://www.w3schools.com/sql/sql_quiz.asp
+https://www.w3schools.com/python/python_quiz.asp
+https://www.w3schools.com/js/js_quiz.asp
+https://www.w3schools.com/html/html_quiz.asp
+https://www.w3schools.com/css/css_quiz.asp
+
+# --- Spring / Java ---
+https://www.javainuse.com/quiz/boot
+https://www.javaguides.net/2024/05/spring-boot-online-test.html
+https://www.tutorialspoint.com/spring/spring_online_test.htm
+https://www.javaguides.net/2023/01/spring-boot-quiz-multiple-choice-questions.html
+https://techielearn.com/quizzes/spring_boot
+https://blimto.com/quiz/spring-framework-and-spring-boot
+https://www.aitechworlds.com/quiz/spring-boot/
+https://spring.cstradic.com
+https://www.testdome.com/tests/java-spring-boot-online-test/187
+
+# --- MCQ clásicos de tecnología ---
+https://www.geeksforgeeks.org/quizzes/computer-graphics/
+https://www.sanfoundry.com/java-questions-answers-101-200/
+https://www.javatpoint.com/java-mcq
+https://www.indiabix.com/java/questions/
+https://mymcqs.net/mcqs/computer-graphics-mcqs/
+https://www.includehelp.com/computer-graphics/mcqs.aspx
+https://www.objectivequiz.com/computer-graphics-questions-answers
+https://compsciedu.com/Category/Computer-Graphics
+https://www.gkseries.com/computer-graphics/multiple-choice-questions-and-answers-on-computer-graphics
+
+# --- Páginas con preguntas/opciones VISUALES (imágenes) ---
+https://www.proprofs.com/quiz-school/story.php?title=mjkyoti3mwq9ki
+https://www.proprofs.com/quiz-school/story.php?title=test_5458
+https://www.fatskills.com/computer-repair/quiz/ports-and-connectors-devices-cables
+https://resources.quizalize.com/view/quiz/cables-connectors-and-ports-b6b86a25-28fc-4f75-a7b4-223faaae836f
+https://wayground.com/admin/quiz/67f47fb9bde3b662bd092c1e/computer-science-image-quiz
+
+# --- Control negativo (flashcards, no examen) ---
+https://quizlet.com/13388049/computer-ports-and-connectors-flash-cards/

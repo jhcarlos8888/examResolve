@@ -1,0 +1,54 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Cuestionario embebido</title>
+  <style>
+    body{font-family:system-ui,sans-serif;padding:24px;line-height:1.5;background:#fff;margin:0}
+    .q{border:1px solid #e5e7eb;border-radius:12px;padding:18px;margin-bottom:18px}
+    .option{display:block;margin:8px 0;padding:10px;border:1px solid #ddd;border-radius:8px;cursor:pointer}
+    .option:hover{border-color:#888}
+    button{padding:11px 18px;border:0;border-radius:10px;cursor:pointer;background:#2563eb;color:#fff;font-weight:600}
+    #result{margin-top:16px;font-weight:700;color:#065f46}
+    h2{margin-top:0}
+  </style>
+</head>
+<body>
+<h2>Cuestionario: Java y Spring</h2>
+<div id="quiz"></div>
+<button id="finish">Finalizar</button>
+<div id="result"></div>
+<script>
+const questions=[
+  { q:'¿Qué modificador de acceso restringe la visibilidad a nivel de paquete en Java?',
+    a:['public','protected','private','(sin modificador)'], c:3 },
+  { q:'¿Cuál es la interfaz base de las colecciones en Java?',
+    a:['java.util.List','java.util.Collection','java.lang.Iterable','java.util.Set'], c:1 },
+  { q:'¿Qué hace @Autowired en Spring?',
+    a:['Crea un bean nuevo','Inyecta dependencias','Publica un endpoint','Activa el modo debug'], c:1 },
+  { q:'¿Qué método convierte un objeto a JSON en Spring MVC?',
+    a:['@ResponseBody / HttpMessageConverter','@JsonConvert','ObjectOutputStream','Gson.parse'], c:0 }
+];
+const quiz=document.getElementById('quiz');
+let checked={};
+quiz.innerHTML=questions.map((item,i)=>`
+  <div class="q">
+    <p><strong>Pregunta ${i+1}:</strong> ${item.q}</p>
+    ${item.a.map((x,j)=>`
+      <label class="option">
+        <input type="radio" name="q${i}" value="${j}"> ${String.fromCharCode(65+j)}) ${x}
+      </label>`).join('')}
+  </div>`).join('');
+
+document.getElementById('finish').addEventListener('click',()=>{
+  let score=0;
+  questions.forEach((item,i)=>{
+    const sel=document.querySelector(`input[name="q${i}"]:checked`);
+    if(sel && Number(sel.value)===item.c) score++;
+  });
+  document.getElementById('result').textContent=`Resultado: ${score}/${questions.length}`;
+});
+</script>
+</body>
+</html>
