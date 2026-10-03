@@ -79,4 +79,13 @@ fi
 
 PROMPT="Resuelve un examen siguiendo la skill exam-resolver (equivalente al comando /resolver). Entrada: ${ARGS}. Modo: ${MODE_TXT}. Detecta primero si la página contiene un examen; si no lo hay, dilo y no inventes preguntas. Después responde, verifica cada selección y avanza hasta el resultado final. No evadas protecciones del sitio."
 echo "[resolve] Prompt: $PROMPT"
+
+# En modo auto se auto-aprueban los permisos para que un examen de 40
+# preguntas no se detenga en cada llamada. En modo semi NO se usa: las
+# confirmaciones van por la herramienta `question`, que sí se pide.
+if [[ "$MODE" == "--auto" ]]; then
+  echo "[resolve] Modo auto: auto-aprobando permisos del agente"
+  exec opencode --auto --prompt "$PROMPT"
+fi
+
 exec opencode --prompt "$PROMPT"

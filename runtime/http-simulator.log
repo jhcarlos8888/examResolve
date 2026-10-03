@@ -1,8 +1,0 @@
-127.0.0.1 - - [02/Oct/2026 15:27:05] "GET /index.html HTTP/1.1" 200 -
-127.0.0.1 - - [02/Oct/2026 15:27:09] "GET /index.html HTTP/1.1" 200 -
-127.0.0.1 - - [02/Oct/2026 15:27:09] code 404, message File not found
-127.0.0.1 - - [02/Oct/2026 15:27:09] "GET /favicon.ico HTTP/1.1" 404 -
-127.0.0.1 - - [02/Oct/2026 15:36:48] "GET /formularios.html HTTP/1.1" 200 -
-127.0.0.1 - - [02/Oct/2026 15:39:15] "GET /iframe-examen.html HTTP/1.1" 200 -
-127.0.0.1 - - [02/Oct/2026 15:39:15] "GET /frame-examen.html HTTP/1.1" 200 -
-127.0.0.1 - - [02/Oct/2026 15:40:00] "GET /spa-a11y.html HTTP/1.1" 200 -

@@ -2,11 +2,21 @@
   "name": "examresolve",
   "private": true,
   "type": "module",
-  "description": "Herramientas del agente resolutor de exámenes (reconocimiento de páginas)",
+  "description": "Herramientas del agente resolutor de exámenes (reconocimiento de páginas y smoke test)",
   "scripts": {
-    "recon": "node scripts/recon.mjs"
+    "doctor": "./scripts/doctor.sh",
+    "test": "node scripts/smoke.mjs",
+    "test:headed": "node scripts/smoke.mjs --headed",
+    "recon": "node scripts/recon.mjs",
+    "typecheck": "tsc --noEmit",
+    "check": "npm run typecheck && npm test"
   },
   "dependencies": {
     "playwright-core": "^1.63.0"
+  },
+  "devDependencies": {
+    "@types/node": "^24.0.0",
+    "typescript": "^7.0.2",
+    "typescript-language-server": "^6.0.1"
   }
 }

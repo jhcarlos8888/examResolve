@@ -55,7 +55,7 @@ async function inspect(page, url) {
         .test(document.title + ' ' + low.slice(0, 500));
       const snip = (re) => (txt.match(re) || [null])[0];
       const audioSrcs = [...document.querySelectorAll('audio, audio source')]
-        .map(a => a.getAttribute('src') || a.currentSrc || '')
+        .map(a => a.getAttribute('src') || (a instanceof HTMLMediaElement ? a.currentSrc : '') || '')
         .filter(Boolean).slice(0, 6);
       const mediaFrames = [...document.querySelectorAll('iframe')]
         .filter(f => /youtube|youtu\.be|vimeo|soundcloud|spotify|audio/i.test(f.src || ''))

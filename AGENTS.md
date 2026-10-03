@@ -23,6 +23,27 @@ contestar" on the current page). Key points it defines:
   R3 `browser_evaluate`/`browser_run_code_unsafe` → R4 vision mode →
   R5 report the blockage and stop. Full scenario matrix in
   `docs/capacidades-playwright.md`. Climb only when the previous rung fails.
+- **R4 requires a multimodal model.** The default `mimo-v2.6-flash-free` is
+  text-only; the skill probes this once at startup and skips R4 if the model
+  cannot read images.
+
+## Skill structure (keep it small)
+`SKILL.md` is the core flow and is read on **every** invocation, so keep it
+under ~350 lines. Per-engine and per-site detail belongs in
+`.opencode/skills/exam-resolver/references/`, loaded only when its fingerprint
+matches (`patrones-comunes.md`, `audio-y-visual.md`, `dexway.md`,
+`articulate-storyline.md`). When you add a finding, put it in the matching
+reference file and add its fingerprint to the "Dispatcher de motores" table in
+`SKILL.md`; do not grow the core.
+
+## Verification before changing anything
+```bash
+npm run check   # typecheck + smoke test (resuelve los 5 simuladores y verifica N/N)
+npm run doctor  # sistema, MCP, npm, scripts, skill, runtime
+```
+`npm test` drives the same primitives the agent uses (`:checked`, native
+setter + events, exact visible text, iframe traversal). If it breaks, real
+exams break too.
 
 ## Browser
 - The MCP server launches Brave through `scripts/playwright-mcp-brave.sh`.
@@ -33,10 +54,10 @@ contestar" on the current page). Key points it defines:
 1. Prefer `browser_snapshot` / accessibility data first. This is normally cheaper and more reliable than screenshots.
 2. Use `browser_find` when searching a large page for a question, answer, button, or label.
 3. Use ordinary semantic tools such as `browser_click`, `browser_type`, `browser_fill_form`, and `browser_select_option` whenever possible.
-4. When an interactive region is not exposed in the accessibility tree, use Vision Mode (`browser_take_screenshot` plus coordinate-based mouse tools) when the page/browser permits screenshots.
+4. When an interactive region is not exposed in the accessibility tree, use Vision Mode (`browser_take_screenshot` plus coordinate-based mouse tools) when the page/browser permits screenshots **and the active model can read images**.
 5. If the page rejects screenshots or automation, do not attempt to bypass anti-automation, anti-screenshot, DRM, proctoring, or access-control mechanisms. Report the obstacle and stop or ask for manual intervention.
 6. After every answer action, verify the visible state before advancing whenever practical.
-7. Do not guess if the question or options are unreadable. Ask for a screenshot/manual check instead.
+7. Do not guess if the question or options are unreadable — including audio you cannot transcribe and images you cannot see. Ask for a screenshot/manual check instead.
 
 ## Simulation workflow
 When the user says to run a simulation (or gives a URL / points at the current tab):

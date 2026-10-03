@@ -8,8 +8,20 @@
         "bash",
         "./scripts/playwright-mcp-brave.sh"
       ],
+      "cwd": ".",
       "enabled": true,
-      "timeout": 15000
+      "timeout": 60000
     }
+  },
+  "permission": {
+    "question": "allow",
+    "bash": {
+      "*": "ask",
+      "./scripts/*": "allow",
+      "npm test*": "allow",
+      "npm run*": "allow",
+      "node scripts/recon.mjs*": "allow"
+    },
+    "external_directory": "ask"
   }
 }

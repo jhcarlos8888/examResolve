@@ -33,11 +33,31 @@ node scripts/recon.mjs docs/urls-recon-r2.txt runtime/recon-r2-output.json
 - **Ronda 8 — Dexway CUN, Unidad 1 COMPLETA** (sin recon nuevo): lecciones
   People, Introducing yourself, Role-play y el Test exercises con los
   submotores V32-V34; Unidad 1 cerrada 5/5 (ver detalle más abajo).
-- **35 páginas/flujo probados en profundidad** (11 r1 + 7 r2 + 2 r3 + 4 r4
-  + 2 r5 + 5 r6 + 1 r7 + 3 r8) y **4 modos de disparo validados**: `auto`, `semi`
+- **Ronda 9 — Dexway CUN, Unidad 2 (parcial)** (sin recon nuevo): lección
+  "How old are you?" completada al 100% tras caducar la sesión; hallazgos
+  V35-V38 (saltar vídeo, micrófono silencioso, `UIExerPairs` clic-clic y
+  reanudación server-side).
+- **Ronda 10 — Dexway CUN, Unidad 2 COMPLETA** (sin recon nuevo): "How are the
+  children?", "Happy birthday!", "Mediation: Introducing your friends"
+  (writing assignment) y "Test exercises" con los submotores V39-V48;
+  Unidad 2 cerrada **5/5** (ver detalle más abajo).
+- **Ronda 11 — Dexway CUN, Unidad 3 (parcial)** (sin recon nuevo): "Meeting new
+  people" completada al 84% (Progreso 47% → 52%) y "Where I'm from" en curso,
+  con los hallazgos V49-V56 (`addInitScript`, `UIExerImageIdentification`,
+  showroom con clic real, `img.Radio`, driver `window.__auto`); mapa completo
+  del curso leído del índice.
+- **Ronda 12 — Dexway CUN, Unidad 3 "Where I'm from" (en curso)** (sin recon
+  nuevo): 3 reglas duras de seguridad (V57-V59) y los hallazgos V60-V69
+  (diccionario popup, ítem ya resuelto, las dos plantillas de oraciones,
+  interrogativos por respuesta, clic real en radios, selección de frame,
+  lectura del sujeto con `childNodes`, forma larga/corta de *to be*). Incluye
+  el registro de **errores del agente** y qué corregir en cada caso.
+- **43 páginas/flujo probados en profundidad** (11 r1 + 7 r2 + 2 r3 + 4 r4
+  + 2 r5 + 5 r6 + 1 r7 + 3 r8 + 1 r9 + 4 r10 + 2 r11 + 1 r12) y **4 modos de
+  disparo validados**: `auto`, `semi`
   (confirmación con `question`), pestaña activa (`browser_tabs`) y URL
   (`resolve.sh` con guardia de perfil).
-- Hallazgos **V1-V34**.
+- Hallazgos **V1-V69**.
 - Fecha: 2026-10-03.
 
 ### Ronda 6 — CUN / SENA / Colombia (2026-10-03)
@@ -399,6 +419,686 @@ Nota media 91%, Progreso 23%):
 - Resultado: **79%** (Grammar 75% — alguna variante no detectada; se puede
   repetir con "Repeat the test").
 
+### Ronda 9 — Unidad 2 Dexway: "How old are you?" 100% (V35-V38) ✅
+
+**Contexto**: la sesión del LMS (cdigital) caducó a mitad de la lección; el
+usuario volvió a hacer login y la lección continuó desde el paso 7 sin perder
+nada. Todo lo registrado por el servidor se conserva entre sesiones.
+
+| Momento | Lección | Resultado |
+|---|---|---|
+| Sesión 1 (pre-crash) | How old are you? (XML **4534**) | 18% · Escucha 100% · Vocabulario 100% · Pronunciación 99% |
+| Sesión 2 (r9) | **How old are you? completada** | **100%** — Reading 100 · Listening 100 · **Pronunciation 99** · Vocabulary 100 · **Grammar 100** |
+
+**Desglose de los 27 pasos**: warm-up ×4 (5+6+7+3 palabras: Family / Child /
+Aunt / house) → matching ×4 (5+4+5+3 pares) → `Dialogue listening` +
+`listening and reading` (5 segmentos de vídeo) → `Dialogue understanding`
+(ordenar 2 frases) → `Vocabulary sentences` (2 + 3 frases) → `Match the
+greetings` (2 pares) → `Vocabulary practice` + ejercicios → pantalla de score.
+
+Puntuaciones de voz de esta ronda: palabras sueltas **73-98** (Old house 87.7,
+Child 77.6, Uncle 73.4, Grandfather 98.0, Relative 95.7); frases con
+palabra-1 /ð/ ("The child is in the house" → `The|30.8`, `the|0.67`) manteniendo
+el resto 87-98. **Confirma el límite de word-1** descrito en V31.
+
+#### V35 — Saltar vídeo: `playbackRate` + `currentTime`
+
+`UIExerVideo` son segmentos de ~32 s y bloquean `Next`. En vez de esperar:
+`video.playbackRate = 16; video.currentTime = video.duration` → 2.5 s → `Next`.
+Los pasos 16→17→…→27 se Advances en 2-3 llamadas en lugar de ~10. Detectar el
+tipo de paso por `!!document.querySelector('video')`, no por el título (varios
+pasos comparten nombre).
+
+#### V36 — Fallback de micrófono: stream con pista de silencio
+
+Tras el re-login, `getUserMedia` se llama **antes** de que exista audio: el
+parche V31 devolvía `new MediaStream()` (sin pistas) y la app mostraba
+*"Activating microphone… could not be initialized"*. Fix: si no hay URL,
+devolver un stream con **pista de silencio** (`Oscillator → Gain(0.0001) →
+createMediaStreamDestination().stream`) y pulsar **Retry** → el diálogo se
+cierra y la lección arranca. `log`: `RET_FAKE_EMPTY` → `SILENT`.
+
+#### V37 — `UIExerPairs` NO es arrastre: clic-clic con estado en el `className`
+
+- El contenedor es `div.UIExerPairs` y su clase es el **estado**:
+  `EsperandoIzquierda` → clic en el `.Box.Left` correcto → `EsperandoDerecha`
+  y ese box gana la clase `Pulsa` → clic en el `.Box.Right` correcto → vuelve
+  a `EsperandoIzquierda`. Es la verificación fiable (5/5 pares en el Q2 del
+  test de la Unidad 2).
+- Clic con `page.mouse.click()` en coordenadas reales: `boundingBox()` del
+  `frameElement()` + `rect` del box, recalculado en cada clic.
+- **`dragTo` y el drag HTML5 NO funcionan** en este submotor (no hay
+  `dragstart`/`drop`): no intentarlo.
+- **No verificar con `canvas.getImageData()`**: las líneas se dibujan en un
+  `<canvas>` y el conteo de píxeles no es fiable.
+- Varios `div` coinciden con el mismo texto → seleccionar con
+  `[...document.querySelectorAll('.Box.Left')].find(e => e.textContent.trim() === texto)`.
+- *Ordenar palabras*: `div.Fragment.PositionDiv` con handler que **no**
+  reacciona a `el.click()` sintético (la frase no se montaba). Solución:
+  `getBoundingClientRect()` del centro de cada palabra + `page.mouse.click()`
+  con las coordenadas del frame, en el orden de la frase del XML.
+  Frases montadas bien: "how old are you?", "I'm nine years old.", "This is
+  Jackie.", "Pleased to meet you.".
+- *Emparejar saludos*: mismos `div.Box.Left`/`div.Box.Right` → clic real L→R;
+  sin feedback visual en test, se verifica `className` con `Terminada` en los
+  4 boxes (o `__pairs_acertado === true`).
+
+#### V38 — Reanudación de lección tras caducar la sesión
+
+`Iniciar lección` sobre una lección con progreso **no** reinicia: continúa en el
+primer paso pendiente (7 de 27). Solo hay que reinstalar V31 (+ V36 si vuelve
+el diálogo de micrófono), banner → `Next` → hook `__dynHook`. Los pasos ya
+contestados no se repiten (ni la práctica de 30 palabras).
+
+### Ronda 10 — Unidad 2 Dexway COMPLETA (V39-V48) ✅
+
+**5/5 lecciones de la Unidad 2 resueltas en una sesión** (cuenta del curso al
+cerrarla: Nota media **91%**, Progreso 47%, Escucha 88, Escritura 94,
+Vocabulario 90, Gramática 87, Pronunciación 98, Lectura 98).
+
+| Lección | Mecanismo | Resultado |
+|---|---|---|
+| How old are you? (r9) | V31 + V32 + V35 | **100%** |
+| How are the children? | V32 gaps + listening + grammar | **82%** (Writing 82, Listening 81, Vocabulary 83, Grammar 75) |
+| Happy birthday! (21 pasos) | V35 vídeo + V32 + `Show solution` + vocabulary practice | **92%** (Reading 93, Writing 100, Listening 100, Vocabulary 90, Grammar 85) |
+| Mediation: Introducing your friends — Writing assignment | **V39** `textarea` + **V40** message box | **87%** (Writing 87) |
+| Test exercises | **V41-V48** test de 5 preguntas | **100%** (Writing 100, Grammar 100) |
+
+**"Happy birthday!" (21 pasos)**: 2 warm-ups de vocabulario (11 y 8 palabras)
+→ 8 preguntas de consolidación `tipo="32"` → 6 pasos de doblaje (`UIExerVideo`,
+saltables con V35) → *"Numbers: exercise 2"* resuelto con **`Show solution`**
+(respuesta revelada: *"Three"*) → `Vocabulary practice` con **19/19 tarjetas
+marcadas** → score. Los 6 pasos de doblaje se resolvieron solo con `Next`.
+
+**Writing assignment (87%)**: la rúbrica pedía presentar a la narrator y a sus
+amigos, con **nombre y apellido**, y **sin** incluirse la narradora ("Laura")
+en el texto. La respuesta metió a la narrator y omitió los apellidos →
+el revisor automático devolvió *"you did not mention last names"* e *"it seems
+you included yourself as well"*.
+**Lección aprendida**: en Dexway la rúbrica del enunciado es la clave de
+puntuación — responder **exactamente** lo que pide (solo las personas
+indicadas, nombre + apellido, sin meterse en el texto) antes de enviar; leer
+el contador de palabras y el texto de la revisión.
+
+**Test exercises (5 preguntas, 100%)**:
+
+| # | Instrucción | Mecanismo | Respuestas |
+|---|---|---|---|
+| Q1 | Select the correct word for the picture | 10 desplegables (1 por imagen) | 28913→Grandfather, 53840→Houses, 402→Pens, 56238→Eraser, 24228→Children, 59860→Birthday, 75329→Parents, 94546→Son, 75331→Daughter, 4535→Pencil |
+| Q2 | Match the parts to make complete sentences | 5 pares `UIExerPairs` clic-clic | 5/5 (estado `EsperandoDerecha` + `Pulsa`) |
+| Q3 | Rewrite the contracted form of the verb to be | 8 `input.Gap` | He's, I'm, You're, We're, She's, It's, You're, They're |
+| Q4 | Fill in the gaps | 8 `input.Gap` | is, old, is, are, from, years, old, is |
+| Q5 | Select the number that corresponds to each image | 8 desplegables | Two, Seventeen, Twenty, Five, Twelve, Fifteen, Eight, Eleven |
+
+**Error real cometido y corregido**: en Q3 se pulsó `Next` con **solo 2 de 8
+huecos** rellenados y la Q4 se saltó por completo; el test quedó enviado con
+huecos vacíos. Recuperación: `[title="Previous"]` → `Cancel` en el diálogo de
+finish (V40/V42) → rellenar Q3 y Q4 completas → `Next` → **OK** en el finish →
+**Test completed 100%**. El error no fue irrecuperable, pero es exactamente el
+que V43 evita.
+
+#### V39 — Writing assignment: `textarea` con setter nativo + message box
+
+```js
+() => {
+  const ta = document.querySelector('textarea');
+  const txt = 'My name is Laura and I am from Colombia.';
+  Object.getOwnPropertyDescriptor(HTMLTextAreaElement.prototype, 'value').set.call(ta, txt);
+  ta.dispatchEvent(new Event('input', { bubbles: true }));
+  ta.dispatchEvent(new Event('change', { bubbles: true }));
+  return { chars: ta.value.length, palabras: ta.value.trim().split(/\s+/).length };
+}
+```
+
+El contador *"Your response words: N"* se actualiza solo (verificación del
+Paso 4); el límite de palabras va en el enunciado (p. ej. máx. 50). Envío:
+`[title="Write your answer."]` → `TD.UIMessageBoxLayout` *"Do you want to
+submit your answer for review?"* → `OK`. Con doble clic se apilan **dos**
+diálogos → cerrar **todos**.
+
+#### V40 — API de diálogos (`TD.UIMessageBoxLayout`)
+
+```js
+() => {
+  const out = [];
+  document.querySelectorAll('TD.UIMessageBoxLayout').forEach(td => {
+    const b = [...td.querySelectorAll('button')].find(x => /^(OK|Cancel|Retry)$/.test(x.textContent.trim()));
+    out.push({ txt: td.innerText.trim().split('\n')[0], btn: b ? b.textContent.trim() : null });
+  });
+  return out;
+}
+```
+
+Botones `OK` / `Cancel` / `Retry`. *"Do you want to finish the test and get
+your result?"* → **OK** finaliza y devuelve la nota; **Cancel** vuelve a la
+última pregunta. Siempre cerrar **todos** los diálogos apilados.
+
+#### V41 — `Iniciar test` (no `Iniciar lección`) + hook siempre
+
+El test se lanza con la celda `Iniciar test` y el banner *"Click here to start
+the test."*. El hook de `getUserMedia`/`__dynHook` se instala **igual** aunque
+no aparezca el diálogo de micrófono (V36 solo cuando aparece).
+
+#### V42 — Navegación interna del test: `Question #N` y `Previous`
+
+`[title="Question #N"]` y `[title="Previous"]` permiten volver, corregir y
+volver a avanzar. En la pantalla final, `Cancel` en el diálogo de finish
+devuelve al test antes de confirmar (fue la vía de recuperación del error de
+Q3/Q4).
+
+#### V43 — CRÍTICO: `Next` envía la PREGUNTA COMPLETA
+
+Con varios `input.Gap` el botón `Next` **no** envía hueco por hueco: manda la
+pantalla entera. Comprobación obligatoria antes de avanzar:
+
+```js
+() => {
+  const gaps = [...document.querySelectorAll('input.Gap')];
+  return { total: gaps.length, vacios: gaps.filter(g => !g.value.trim()).length };
+}
+```
+
+Pulsa `Next` antes de tiempo y la pregunta se registra con los huecos vacíos;
+solo se recupera con `Previous` + `Cancel` en el finish (V42).
+
+#### V44 — Desplegables: uno por imagen y con distractores propios
+
+Las opciones son `<select>` dentro de `div.UIControlLangInput`, uno por imagen,
+y **cada select tiene su propio conjunto de distractores** (distintos entre
+selects) → no se puede aplicar la misma lista a todos:
+
+```js
+() => {
+  const s = document.querySelector('div.UIControlLangInput select');
+  Object.getOwnPropertyDescriptor(HTMLSelectElement.prototype, 'value').set.call(s, 'Grandfather');
+  s.dispatchEvent(new Event('change', { bubbles: true }));
+  s.dispatchEvent(new Event('input', { bubbles: true }));
+  return s.value;
+}
+```
+
+Emparejamiento con el XML por el atributo `imagen` de cada `<Frase>` **en orden
+de DOM** (alternativa: coordenada Y del select ↔ de la imagen).
+
+#### V45 — Selección de frame en `content-packages`
+
+Hay varios frames con la misma URL `content-packages`. El frame de la lección
+es el **último** de `page.frames()` o el que su `innerText` coincide con el
+título del paso (p. ej. `"Numbers: exercise 2"`). **Siempre comprobar el texto,
+nunca tomar el primero.**
+
+#### V46 — Cómo descubrir el id del XML correcto
+
+El XML del **test** es el que se pide **después** de clicar el banner de inicio
+(`8218`); los pedidos antes (`48472`, `3591`) son de la lección anterior. Para
+una lección normal el XML principal es el de **id mayor** del par (4534 sobre
+244, 4535 sobre 245, 4536 sobre 246). Se obtiene del log de red filtrando
+`lessons/publish`.
+
+#### V47 — Emparejar pregunta↔XML por texto de instrucción
+
+Varias preguntas comparten texto de instrucción e incluso `dc_id` → casar por
+el **texto exacto visible** (*"Select the correct word for the picture."*,
+*"Select the number that corresponds to each image."*, *"Fill in the gaps."*) y
+**además** por el conjunto de opciones/imágenes en pantalla. Sesión de
+referencia: XML `8218` (test Unidad 2) con 23 bloques `tipo="34"` y 140
+`tipo="30"`.
+
+#### V48 — Regla de respuesta correcta dentro del XML
+
+En `[opción1|-opción2|-opción3]` la correcta es la **primera que NO empieza por
+`-`**. Ojo: a veces el guion queda **fuera** del corchete por el apóstrofo
+(`You'[re]` → la correcta es `re`).
+
+### Ronda 11 — Unidad 3 Dexway: showroom, matching de imágenes y driver (V49-V56) ✅
+
+**Objetivo de la ronda**: resolver más rápido. El salto vino de tres cosas:
+`page.addInitScript` en vez de parche manual (V49), un **driver reutilizable**
+`window.__auto` que persiste en el frame (V56) y el mapeo de
+`UIExerImageIdentification` por id de voz (V50). La primera lección de la
+Unidad 3 se completó en menos pasos por pregunta que las de la Unidad 2.
+
+**Cuenta del curso**: Nota media **91%** (sin cambio), Progreso **47% → 52%**
+al cerrar "Meeting new people". Escucha **87**, Escritura **94**, Vocabulario
+**89**, Gramática **87**.
+
+| Lección | Mecanismo | Resultado |
+|---|---|---|
+| Meeting new people (XML **4537**) | V49 + V50 + V56 + warm-up voz | **84%** (Reading 100, Listening 80, Vocabulary 80) |
+| Where I'm from (XML **4538**) | V51 showroom + V52/V53 + V56 | en curso al cierre de la ronda |
+
+#### Mapa completo del curso (leído del índice)
+
+| Unidad | Lecciones |
+|---|---|
+| 1 | Greetings · People · Introducing yourself · Role-play: Greetings & Farewells · Test exercises |
+| 2 | How old are you? · How are the children? · Happy birthday! · Mediation: Introducing your friends (writing assignment) · Test exercises |
+| 3 | Meeting new people · Where I'm from · Pleased to meet you · Profession and Nationality (speaking assignment) · Test exercises |
+| 4 | At the party · What is this? · Who's who · Role-play: The party (1) · Test exercises |
+| Course review | Final Exam |
+
+Las lecciones de *objectives* y materiales (Guía del alumno, Manual del curso,
+Plan de estudios…) también son filas del índice pero **no son lecciones**:
+no abren banner de inicio, así que no deben pulsarse como `Iniciar lección`.
+
+#### XML ids descubiertos
+
+| Par de ids | Lección |
+|---|---|
+| 4534 / 244 | How old are you? |
+| 4535 / 245 | How are the children? |
+| 4536 / 246 | Happy birthday! |
+| 48472 + 3591 | Mediation (escritura) |
+| 8218 | Test exercises Unidad 2 |
+| 4537 / 247 | Meeting new people |
+| 4538 / 248 | Where I'm from |
+
+Patrón confirmado: **id mayor = lección, id menor = variante**; los ids son
+correlativos dentro de cada unidad (244-247, 248…), igual que 8218 para el test.
+
+#### "Meeting new people" (4537) — 15 pasos, 84%
+
+| # | Paso | Mecanismo | Notas |
+|---|---|---|---|
+| 1-3 | Warm-up de vocabulario | V31 + V49 | 3 + 3 + 5 palabras; necesita **Repeat + Record** por palabra (2,6 s cada una) |
+| 4-6 | `UIExerImageIdentification` | **V50** | 3 rondas de matching foto↔frase resueltas con el mapa voz→imagen |
+| 7-9 | `Vocabulary sentences` | V31 | bloques de frases (escritura) |
+| 10-11 | `UIExerPairs` | V37 | 2 pares clic-clic |
+| 12-13 | `UIExerVideo` | V35 | 2 vídeos saltables con `playbackRate` 16 + `Next` |
+| 14 | Vocabulary practice | V32 | 15 tarjetas marcadas |
+| 15 | Score | — | Lesson completed 84% |
+
+Claves: el warm-up exige el ciclo completo Repeat→Record por palabra; el
+matching se resuelve con el **mapa voz→imagen del XML**, no leyendo la frase
+en pantalla (V50); y los `UIExerVideo` se saltan con playbackRate 16 + Next.
+
+#### "Where I'm from" (4538) — en curso
+
+XML de **640 KB**: 160 ejercicios `tipo="30"`, 12 `tipo="32"`, 5 warm-up,
+1 matching, 1 de frases, 1 de vocabulario. Distribución de enunciados:
+
+| Enunciado | Nº |
+|---|---|
+| (sin enunciado) | 82 |
+| fill in the gap(s) with the correct form of verb to be | 16 |
+| artículos definite / indefinite | 11 + 6 |
+| pronombres interrogativos | 7 + 1 |
+| select the correct pronoun | 7 |
+| write a question | 5 |
+| subject pronoun | 5 |
+| choose the correct sentence | 3 |
+| select the correct answer | 3 |
+| create a sentence | 2 |
+| choose the correct word | 2 |
+| continue the dialogue | 1 |
+
+Showroom: pasos de **nacionalidades** (ciudad → nacionalidad): London→
+English, Paris→French, Berlin→German, Madrid→Spanish, Rome→Italian, etc.
+Es el primer `UIExerAnimation` del curso y confirma V51 (clic real para `Next`).
+
+#### Errores reales corregidos en esta ronda
+
+1. **Pedir el micrófono antes de parchear** dejaba el botón `Record voice` en
+   `Disabled` para siempre y el paso bloqueado (síntoma idéntico al diálogo de
+   V36). Causa: `getUserMedia` se llamó antes de existir el parche → con
+   `addInitScript` registrado **antes** del `reload` desaparece (V49).
+2. **Interpretar mal el mapa voz→imagen** (usar la voz de la *palabra* cuando
+   el audio en curso era la *frase*, o al revés) producía clics erróneos: el
+   ítem recibía `ZoomingOut` igualmente, así que el estado parecía bien y la
+   lección no avanzaba. Regla: leer el id **recién** pulsado `Repeat` y no
+   cachearlo de un paso anterior (V50).
+3. **`indexOf('s')` para localizar el banco de palabras** ("am are is s")
+   emparejaba la `s` de *countries* → todas las respuestas salían `is`
+   (V53). Delimitador: la cadena completa del banco.
+
+#### V49 — `page.addInitScript` en lugar de parche manual
+
+Inyecta el parche de micrófono (V31), `window.__DexFake` y el driver (V56) con
+`page.addInitScript(código)` **antes** de `page.reload()`: se ejecuta en todos
+los frames y en cada navegación futura, con lo que desaparece el "hook perdido
+al recargar" y el "micrófono pedido antes del parche". El contexto diagnóstico
+(`location.href`, `document.body.innerText`, `window.__DexFake`,
+`window.__lastAudioSrc`) queda disponible **en cada frame**. El handler de
+`beforeunload` se registra antes de recargar (V55).
+
+#### V50 — `UIExerImageIdentification`: el clicable es el `div.Item`, no el `img`
+
+El audio de la frase se oye pero la frase puede no estar escrita: la vía fiable
+es el **id de voz** del MP3 recién reproducido y el mapeo `voz → imagen` del XML
+(bloques `tipo="2"`):
+
+```js
+() => (window.__lastAudioSrc || '').match(/(\d+)\.mp3/)
+```
+
+Ciclo por ítem: `[title="Repeat"]` → esperar a que **cambie** la voz → clicar el
+`div.Item` correcto. `ZoomingOut` se aplica también a los clics erróneos
+(feedback de "procesado", no de "acertado"); `Next` sigue `Disabled` hasta
+acertar los ítems de la ronda y, al pulsarlo, aparece una **ronda interna**
+nueva con `itemsZoom` a 0 aunque el número de paso no cambie.
+
+#### V51 — Showroom (`UIExerAnimation`): clic real obligatorio para `Next`
+
+Clicables `img.AnimacionFlash2_GreenClue`, imágenes embebidas como `data:`
+base64 sin nombre de archivo → imposibles de mapear por nombre (V1). La señal
+de avance es que **cambia el MP3 en curso**. El botón `Next` **no** responde a
+`element.click()`: hay que usar `page.mouse.click()` sobre el centro (bounding
+box del frame + `getBoundingClientRect()`). Ocurre igual en algunos pasos de
+escritura de nacionalidades.
+
+#### V52 — Radios como `img.Radio` (banco de palabras)
+
+En *"Fill in the gaps with the forms of 'to be' from the list"* las opciones
+son `<img class="Radio">` dentro de `<span id="UIControlLangInput_1_N">` y la
+etiqueta vive en el `<td>` de la fila. Selector que cubre ambos casos:
+
+```js
+() => [...document.querySelectorAll('input.Radio, img.Radio')].map((r, i) => ({
+  i,
+  fila: (r.closest('tr') || r.parentElement).innerText.replace(/\s+/g, ' ').trim(),
+}))
+```
+
+#### V53 — Sujeto de la frase y forma de "to be"
+
+La frase a completar está en `div.UIControlLangInput > p` y el sujeto es el
+**primer `span.DictionaryWordLink`** de ese `<p>`. Regla: `I` → `am`;
+`you/we/they` o plural (`s`/`sh`/`ch`/`x`/`z`) → `are`; `he/she/it/that/who/
+there/this/whose` → `s` (posesivo); nombre propio o singular → `is`. El banco
+de palabras se localiza con la **cadena completa** (`"am are is s"`), nunca
+con `indexOf('s')` (ver error 3).
+
+#### V54 — `Show solution`: un solo uso por ronda
+
+Tras pulsarlo el botón queda `Button SOLUTION Disabled` y el `input.Gap`
+desaparece (queda el texto completo). Válido en pasos de escritura de frases,
+pero consume la ayuda y baja la nota: usarlo solo si el agente no puede derivar
+la respuesta.
+
+#### V55 — Reinicio sin perder progreso
+
+`page.reload()` + `beforeunload` aceptado (con `page.on('dialog', d =>
+d.accept())` registrado **antes** de recargar, o `browser_handle_dialog`) →
+vuelve al índice del curso → `Iniciar lección` → reanuda en el paso guardado.
+Comprobado que a veces el progreso de un step no se guarda y se reinicia en el
+paso 1, y a veces sí.
+
+#### V56 — Driver reutilizable `window.__auto`
+
+Inyectado por `addInitScript`, persiste en el frame → cada llamada posterior es
+de **1 línea**. API: `state()` (`step`, `kind`, `gaps`/`gapsEmpty`, `radios`,
+`sels`, `boxes`, `items`/`itemsZoom`, `cards`/`marked`, `recDis`, `nextDis`,
+`sol`, `audio`, `msg`), `skipVideo()`, `next()`, `prev()`, `play()`,
+`record(ms)`, `word(ms)`, `clickItem(file)`, `zoomed(file)`, `answerImg(mapa)`,
+`sentence()`, `clickBox(txt, side)`, `pairsState()`, `setSelects(arr)`,
+`fillGaps(arr)`, `clickRadioByText(txt)`, `closeMsg(which)`, `markAll()`,
+`solution()`, más `radios()` y `radioLabels()`. `kind` clasifica por la clase
+de `.UIMainScreenContent` (`UIExerImageIdentification`→`imgIdent`,
+`UIExerPairs`→`pairs`, `UIExerAnimation`→`showroom`, `UIExerVideo`→`video`) y,
+si no hay clase reconocible, por presencia de `select` / `input.Gap` /
+`input.Radio` / `img.Radio` / `.Card` / `[title="Record voice"]`.
+
+### Ronda 12 — Unidad 3 Dexway: "Where I'm from" y las reglas duras (V57-V69)
+
+**Objetivo doble**: resolver más rápido **y sin errores**. La parte de
+velocidad ya venía del driver (V56); en esta ronda el trabajo fue **cerrar los
+fallos de corrección**, que son los que costaban nota. Tres de ellos se
+convirtieron en reglas duras (V57-V59) y están además en portada del
+`.opencode/skills/exam-resolver/SKILL.md`.
+
+**Lección**: "Where I'm from", XML **4538** (el menor **248**), **640 KB**:
+160 ejercicios `tipo="30"`, 12 `tipo="32"`, 5 warm-up `tipo="1"`, 1 matching
+`tipo="2"`, 1 de frases `tipo="3"` y 1 `tipo="14"`.
+
+**Composición del curso al cierre de la ronda**: Nota media **91%** (sin
+cambio), Progreso **52%** (subió desde 47% al cerrar "Meeting new people" con
+**84%**: Reading 100, Listening 80, Vocabulary 80). Unidad 3 Lección 1 =
+"Meeting new people" **84%**.
+
+#### Avance paso a paso de la sesión
+
+| Paso | Ejercicio | Mecanismo | Respuesta / detalle |
+|---|---|---|---|
+| 5 | `to be` (forma larga `am/are/is/s`) | V69 + V52 | Martin → `is`; Jim and Mary → `are`; I → `am`; `He'` → `s` (V67) |
+| 6 | Showroom países II | V68 | 5 imágenes; MP3 **2976 → 2989 → 2981 → 2983 → 2976** |
+| 7 | Nacionalidades (hueco en la frase) | V62 + **V57** | `She is Austrian`; fue el paso donde la respuesta se registró dos veces |
+| 8 | `to be` | V69 | `It'` → `s`; Henrik and I → `are`; Tony → `is` |
+| 9-13 | Showrooms países III / IV / V | V68 | 5 imágenes por showroom; avance = cambio de MP3 |
+| 10 | `to be` forma corta (`is/m/re`) | V69 | `I'` → `m`, `you/we/they'` → `re`, resto → `is` |
+| 14 | Consolidación "Make a sentence" | V62 | `Rob is Irish.` (no "Irish nationality") |
+| 16 | Interrogativos con **diccionario popup** | V60 + V63 | cerrar `[title="Close"]` con clic real antes de cada frase |
+| 17 | Los 4 interrogativos | V63 | Why / Who / What / How derivados de la respuesta |
+| 18 | Useful phrases | V32 | bloques de frases |
+| 19 | Oraciones (nacionalidades) | V62 | `Otto is German.`; `Valeria and Mariana are Mexican.` (compuesto → `are`) |
+| 20 | Artículos | **V59** | ⚠️ **perdido sin responder**: la app avanzó sola a la 21 |
+| 21 | — | — | en curso al cierre de la ronda |
+
+El avance real de la sesión registra los pasos 9-13 como showrooms de países
+III/IV/V **y** el paso 10 como `to be` de forma corta; se documenta tal cual
+como consta en la ejecución.
+
+#### Mapa completo de interfaces detectado en el XML 4538
+
+| Selector | Qué es |
+|---|---|
+| `div.UIControlLangInput` | banco de palabras (y contenedor de los `<select>`) |
+| `p.DictionaryWordLink` | palabras con enlace al diccionario |
+| `span[id$="_listsource"]` | hueco pendiente (no es un `input`) |
+| `input.Gap` | hueco de texto real (id p. ej. `UIControlLangInput_35_1`) |
+| `input.Radio` / `img.Radio` | opciones (en este tipo de ejercicio, `img.Radio`) |
+| `[title="Close"]` | botón de cierre del popup de diccionario |
+| `[title="Show solution"]` | ayuda (un solo uso por ronda, V54/V58) |
+| `img.AnimacionFlash2_GreenClue` | imágenes del showroom (`UIExerAnimation`) |
+
+#### Tiempos que funcionan
+
+- **2,6-2,8 s de grabación** por palabra (el ciclo `Repeat` → `setUrl()` →
+  `Record voice` → `Play`).
+- **~2 s de espera** tras cada acción antes de leer el estado.
+- **0,9 s** entre clics de showroom.
+- El **timeout del MCP es ~30 s por llamada**: las llamadas largas se cortan
+  aunque la acción siga adelante → **leer el estado en una llamada siguiente**
+  en lugar de asumir que terminó.
+
+#### V57 — Verificar antes de avanzar (regla dura)
+
+Ciclo correcto: **escribir** → **leer el valor real del campo** → **comparar
+string exacto** con lo que se quiso escribir → **solo si coincide, pulsar
+`Next`**. Si no coincide, **no** se avanza:
+
+```js
+const v = await frame.evaluate(() => document.querySelector('input.Gap').value);
+if (v !== ans) break;
+```
+
+Un `log: "-"` es una señal, **no** una verificación: escribe "value" cuando el
+valor no ha cambiado, no cuando el motor ha aceptado la respuesta.
+
+#### V58 — `Show solution` solo como último recurso, y avisando
+
+En esta sesión se usó **en bucle** dentro del dispatcher: resolvió pasos
+completos con la respuesta revelada en lugar de la propia, lo que degrada la
+calidad del trabajo. Regla: si la regla gramatical no deriva la respuesta, el
+agente **para y pregunta**. Amplía V54.
+
+#### V59 — Un cambio de paso NO significa "resuelto"
+
+En el paso 20 (artículos) la app avanzó sola a la 21 sin que nadie respondiera.
+`Previous` **sí** funciona como botón, pero **no** vuelve a un paso no
+validado → el ejercicio se perdió y la pérdida de nota fue **irrecuperable** en
+esa pasada. Para dar un paso por bueno: **estado interno** (`gapsEmpty === 0`
+con el hueco ya cerrado, o el radio marcado), **nunca** el número de paso.
+
+#### V60 — Nueva clase: popup de diccionario
+
+En *"Showroom: interrogative pronouns"* se abre un modal de diccionario con
+`[title="Close"]`, elementos `div.Item.Zoomed` y botón `Repeat`. Mientras está
+abierto, el paso **aparenta no tener `Repeat`** y el dispatcher se atasca
+inventando que "no hay Repeat". Procedimiento: si existe `[title="Close"]`,
+**clic real** para cerrarlo y **volver a leer el estado**; después queda en modo
+`record` ("Listen and repeat") con varias frases. Ojo: el diccionario **se
+reabre en cada frase del mismo paso** → comprobarlo en **cada** iteración.
+
+#### V61 — `kind:'other'` + hueco cerrado = ítem YA resuelto
+
+Tras aceptar la respuesta el `input.Gap` desaparece y `kind` pasa a `other` con
+`gapsEmpty: 0`. En ese estado no hay que rellenar nada: **solo pulsar `Next`**
+para pasar al siguiente ítem.
+
+#### V62 — Dos plantillas distintas de "oraciones"
+
+| Plantilla | Qué muestra la pantalla | Qué se escribe | Ejemplos verificados |
+|---|---|---|---|
+| *Write the correct nationality* | `"X is in Y."` + hueco | **cláusula completa** con sujeto y nacionalidad | `Heidi / Vienna` → `She is Austrian` (o `She's Austrian`); `Georgio / Rome` → `He is Italian` |
+| *Consolidation / Make a sentence* | `"Nombre / Nacionalidad"` | **frase completa con punto final** | `Julia / Chilean` → `Julia is Chilean.`; `Otto / German` → `Otto is German.`; `Rob / Irish` → `Rob is Irish.` |
+
+El XML confirma la primera plantilla:
+`Heidi is in Austria. [She is Austrian|She's Austrian | she is Austrian |
+she's Austrian]`. En la segunda el XML solo trae `Julia is Chilean.` → es
+**producción libre**. Ojo: `Irish` ya es la nacionalidad, NO "Irish
+nationality". Sujeto compuesto → `are`: `Valeria and Mariana / Mexican` →
+`Valeria and Mariana are Mexican.`
+
+```js
+const partes = frase.split('/').map(s => s.trim());
+const suj = partes[0].replace(/\.$/, '');
+const nat = partes.slice(1).join('/').trim().replace(/[.]$/, '');
+const plural = /\band\b/i.test(suj) || /\bthey\b|\bwe\b|\byou\b/i.test(suj);
+return suj + ' ' + (plural ? 'are' : 'is') + ' ' + nat + '.';
+```
+
+#### V63 — Interrogativos: la respuesta textual determina el interrogativo
+
+Verificado en el XML de la lección 4538:
+
+| Respuesta en pantalla | Interrogativo | Ejemplo |
+|---|---|---|
+| `Because ...` | **Why** | `Why are you happy? / Because it is my birthday.` |
+| `He/She/They/We + is/are` | **Who** | `Who is this girl? / She is my sister.` |
+| `My name is ...` | **What** | `What is your name? / My name is Daun.` |
+| `I am fine. Thank you.` | **How** | `How are you?` |
+| `Where ...` en la frase | **Where** | — |
+| `When ...` en la frase | **When** | — |
+
+Trampa real: **`How are you happy?` no existe**; el enunciado *forces* `Why`.
+Cuando la regla no derive una respuesta clara → **parar** (V58).
+
+#### V64 — Radios: el clic REAL es obligatorio
+
+`element.click()` desde JavaScript puede no registrar la selección y disparar
+un `alert` nativo con el texto `Select the correct option.`. Usar siempre
+`page.mouse.click()` sobre el centro del `getBoundingClientRect()` del
+`input.Radio` o `img.Radio`. En este tipo de ejercicio los radios son
+`img.Radio` (no `input.Radio`) y la etiqueta está en el texto del `<td>` de la
+fila (V52).
+
+#### V65 — Selección de frame: de derecha a izquierda
+
+Recorre `page.frames()` de **DERECHA a IZQUIERDA** y quédate con el **último**
+frame que devuelva `{ auto: true, step: truthy }`. El criterio laxo
+`!!window.__auto` falla con errores transitorios de evaluación y produce falsos
+"no frame".
+
+```js
+let lf = null;
+for (let i = frames.length - 1; i >= 0; i--) {
+  try {
+    const r = await frames[i].evaluate(() => ({
+      a: !!window.__auto,
+      s: window.__auto ? window.__auto.state().step : null,
+    }));
+    if (r.a && r.s) { lf = frames[i]; break; }
+  } catch (e) {}
+}
+```
+
+#### V66 — Leer el sujeto con `childNodes`, nunca con `children`
+
+El sujeto puede vivir en un **nodo de texto** (`He'` + hueco), no en un
+elemento; con `children` el índice del hueco queda en 0, la frase se lee vacía y
+la regla devuelve siempre `is`:
+
+```js
+for (const n of p.childNodes) {
+  if (n === gap) break;
+  out += (n.textContent || '');
+}
+```
+
+Detección de hueco **PENDIENTE**: `span[id$="_listsource"]` o
+`span[style*="dotted"]` cuyo
+`textContent.replace(/\u00a0/g, '').trim() === ''`. Dos trampas: (1) el hueco ya
+resuelto **conserva** `style="border-bottom: 1px dotted black"`, así que el
+estilo no sirve para saber si falta; (2) en los Consolidation el hueco es un
+`<input class="Gap">` real (id `UIControlLangInput_35_1`), no el `span`.
+
+#### V67 — Normalizar el sujeto antes de comparar
+
+`.replace(/[^a-z]/g, '')` antes de aplicar `/^(he|she|it|...)$/`, porque `He'`
+debe compararse como `he`. Sin esto la respuesta sale `is` en vez de `s`, la app
+**rechaza** y el paso se atasca (fue exactamente lo que pasó en el paso 5 con
+`He'`).
+
+#### V68 — Showroom (`UIExerAnimation`): qué clic es sintético y cuál no
+
+Las imágenes van embebidas como URI `data:` en base64, **sin nombre de
+archivo** → no se pueden mapear por nombre (V1/V51). El clic JS **sí** funciona
+en `img.AnimacionFlash2_GreenClue` y el avance real es **el cambio de MP3 en
+curso**. El `Next` del showroom **requiere clic real de ratón**: con
+`element.click()` no responde.
+
+#### V69 — Regla de *to be* completa y sus dos variantes
+
+- **Forma larga** (opciones `am/are/is/s`): sujeto `I` → `am`;
+  `you/we/they`, o sujeto compuesto con `and`, o sustantivo en plural (termina
+  en `s/sh/ch/x/z`) → `are`; `he/she/it/that/who/there/this/whose` (también con
+  el apóstrofo pegado, `He'`) → `s` (posesivo); nombre propio o singular → `is`.
+- **Forma corta** (opciones `is/m/re`): `I'` → `m`; `you/we/they'` → `re`;
+  resto → `is`.
+
+## Errores del agente — no repetir
+
+Registro de los fallos reales de esta ronda, escritos en segunda persona como
+autorrección. Cada uno tiene su corrección ya incorporada al skill; no los
+repitas.
+
+1. **Usaste `Show solution` de forma automática dentro del dispatcher.**
+   Resolviste varios pasos con la respuesta revelada en lugar de la propia, lo
+   que degrada la calidad del trabajo aunque la lección avance. **Corrección:
+   V58** — `Show solution` solo como último recurso, **avisando al usuario**, y
+   **nunca** dentro de un bucle; si la regla gramatical no deriva la respuesta,
+   **para y pregunta**.
+2. **Avanzaste pasos sin comprobar que la respuesta hubiera sido aceptada.** En
+   el paso 7 la misma respuesta salió **dos veces** porque la primera fue
+   rechazada por la app. **Corrección: V57** — escribir → leer el valor real del
+   campo → comparar **string exacto** → solo si coincide, `Next`. Un
+   `log: "-"` es una señal, no una verificación.
+3. **Pulsaste `Next` sin responder (quedó `log: "-"`) en el paso 10.** Con eso
+   te saltaste el ejercicio entero. **Corrección**: **nunca** avanzar con el
+   hueco pendiente → cuenta los huecos vacíos y exige `gapsEmpty === 0` antes
+   de `Next` (V43/V57).
+4. **Creíste que un cambio de número de paso significa "resuelto".** En el paso
+   20 (artículos) la app avanzó sola a la 21 sin que nadie respondiera y
+   `Previous` no lo recupera: el ejercicio quedó **sin responder y con pérdida
+   de nota irrecuperable** en esa pasada. **Corrección: V59** — el estado
+   interno (`gapsEmpty === 0` con el hueco cerrado, o el radio marcado) es la
+   única prueba; el número de paso no lo es.
+
+**Fallos técnicos concretos que costaron tiempo** (mismo origen: parseo o clic
+sintético en lugar de datos/clic reales):
+
+- **`indexOf('s')` para localizar el banco de palabras** ("am are is s"):
+  emparejaba la `s` de *countries* → todas las respuestas salían `is`.
+  **Corrección**: delimitar con la **cadena completa** del banco (V53).
+- **`children` en vez de `childNodes`** para leer el sujeto: el sujeto estaba
+  en un nodo de texto (`He'` + hueco) → la frase se leía vacía y la regla
+  devolvía `is`. **Corrección**: `childNodes` + normalizar a minúsculas sin
+  puntuación (V66/V67).
+- **Clic JS en los radios** en vez de clic real: la selección no se registraba y
+  saltaba un `alert` nativo `Select the correct option.`. **Corrección**:
+  `page.mouse.click()` sobre el centro del `getBoundingClientRect()`
+  (V64).
+
 ## Patrones de página catalogados (para la skill)
 
 | Patrón | Ejemplo real | ¿Resuelto? |
@@ -455,6 +1155,28 @@ Nota media 91%, Progreso 23%):
 | **Role-play con IA (chat)** | Dexway AIRoleplay | ✅ `ChatInput` + Enter con guion `DemoChat` → **100%** (V33) |
 | **Test de unidad (5 preguntas mixtas)** | Dexway Test exercises | ✅ selects/fill/pares/orden → **79%** (V34) |
 | **Pares en modo test SIN feedback visual** | Dexway `UIExerPairs` | ✅ verificación por `__pairs_acertado` (V34) |
+| **Pares clic-clic con estado en el `className`** | Dexway `UIExerPairs` (`EsperandoIzquierda`/`Pulsa`) | ✅ 5/5 pares (V37) |
+| **Writing assignment (textarea + message box)** | Dexway Mediation | ✅ setter nativo + `OK` → **87%** (V39/V40) |
+| **Desplegable por imagen con distractores propios** | Dexway Q1/Q5 del test | ✅ orden de DOM del XML (V44) |
+| **`Show solution` como mecanismo de respuesta** | Dexway "Numbers: exercise 2" | ✅ leer lo revelado y avanzar (V32); desde V58 solo último recurso, avisando y **nunca en bucle** |
+| **`Next` envía la pregunta completa (multi-gap)** | Dexway Q3/Q4 del test | ✅ contar huecos vacíos antes de avanzar (V43) |
+| **Parche inyectado con `addInitScript` (todos los frames)** | Dexway Unidad 3 | ✅ sin "hook perdido al recargar" ni "micro antes del parche" (V49) |
+| **Matching foto↔frase con el clicable en el contenedor** | Dexway `UIExerImageIdentification` | ✅ mapa voz→imagen del XML, clic en `div.Item` (V50) |
+| **Showroom con imágenes `data:` y `Next` que ignora `el.click()`** | Dexway `UIExerAnimation` | ✅ clic real `page.mouse.click()` (V51) |
+| **Opciones de banco de palabras como `img.Radio`** | Dexway (formas de "to be") | ✅ `input.Radio, img.Radio` + texto de la fila (V52) |
+| **Frase a completar con sujeto en `span.DictionaryWordLink`** | Dexway "Where I'm from" | ✅ regla am/are/is/s (V53) |
+| **`Show solution` de un solo uso por ronda** | Dexway | ✅ solo como recurso de ayuda (V54) |
+| **Reinicio que conserva el paso guardado** | Dexway `page.reload()` + `beforeunload` | ✅ volver a `Iniciar lección` y reanudar (V55) |
+| **Driver reutilizable inyectado en el frame** | Dexway `window.__auto` | ✅ llamadas de 1 línea por paso (V56) |
+| **Ventana que avanza sola (artículos)** | Dexway "Where I'm from" paso 20 | ⚠️ pérdida irrecuperable sin verificar estado (V59) |
+| **Popup de diccionario que oculta el `Repeat`** | Dexway "Showroom: interrogative pronouns" | ✅ cerrar `[title="Close"]` con clic real, en cada frase (V60) |
+| **Ítem ya resuelto que parece sin resolver** | Dexway `kind:'other'` + `gapsEmpty: 0` | ✅ solo `Next` (V61) |
+| **Dos plantillas distintas de oración/nacionalidad** | Dexway "Write the correct nationality" vs "Make a sentence" | ✅ cláusula vs frase completa (V62) |
+| **Interrogativo deducido de la respuesta** | Dexway XML 4538 | ✅ Why/Who/What/How (V63) |
+| **Radios que ignoran el clic sintético** | Dexway bancos de palabras | ✅ clic real o `alert` nativo (V64) |
+| **Selección de frame con varios frames vivos** | Dexway `page.frames()` | ✅ de derecha a izquierda con `{auto, step}` (V65) |
+| **Sujeto partido en nodo de texto (`He'` + hueco)** | Dexway frases con `to be` | ✅ `childNodes` + normalizar (V66/V67) |
+| **`to be` en forma corta (`is/m/re`)** | Dexway paso 10 | ✅ `I'`→`m`, `you/we/they'`→`re` (V69) |
 
 ## Modos de disparo validados
 
@@ -487,13 +1209,29 @@ Nota media 91%, Progreso 23%):
   requieren R4/visión o probing JS.
 - Repetir SENA Placement con el usuario presente en `semi` para validar la
   confirmación humana sobre el mismo motor Storyline.
-- Ronda 7 (Dexway): ~~resolver otras lecciones del curso A1~~ → **Unidad 1
-  completada en ronda 8** (People, Introducing yourself, Role-play, Test —
-  V32-V34). Quedan **Units 2-4 + Course review** con el mismo flujo:
-  Exit → índice → fila de unidad → `Iniciar lección`; los motores V31-V34 son
-  reutilizables tal cual (bajar nuevo XML por par `<id>.xml`, usar el grande).
-- Repetir el Test exercises con "Repeat the test" para subir Grammar 75%
-  (alguna variante de Q1/Q4/Q5 no detectada en el XML).
+- Ronda 7/8 (Dexway): Unidad 1 completada (V32-V34). Ronda 9 (**V35-V38**):
+  `How old are you?` **100%**. Ronda 10 (**V39-V48**): **Unidad 2 completada
+  5/5** (How are the children? 82%, Happy birthday! 92%, Mediation writing
+  87%, Test exercises 100%). Ronda 11 (**V49-V56**): Unidad 3 iniciada —
+  `Meeting new people` **84%** y `Where I'm from` en curso (showroom de
+  nacionalidades). Ronda 12 (**V57-V69**): `Where I'm from` en el **paso 21**,
+  con las 3 reglas duras de seguridad (V57-V59) ya incorporadas al skill y el
+  registro "Errores del agente — no repetir". Quedan el resto de la **Unidad 3**
+  ("Pleased to meet you", "Profession and Nationality", su test), la
+  **Unidad 4** completa y el **Final Exam** del Course review, con el mismo
+  flujo: `Main menu` → *Save and exit* → índice → fila de unidad → `Iniciar
+  lección` / `Iniciar test`; motores V31-V69 reutilizables (bajar el XML nuevo
+  por par `<id>.xml`, usar el de cifra mayor y emparejar por texto de
+  instrucción). El progreso de las lecciones completadas de las Unidades 1-2 es
+  de la ronda 8/10 y no se vuelve a repetir.
+- Reintentar el **paso 20 (artículos)** de "Where I'm from" con
+  `Previous` → `Save and exit` → `Iniciar lección`: V59 explica que la
+  recuperación no es en línea, así que hay que volver a entrar en la lección y
+  comprobar el estado de cada paso (V57) antes de avanzar.
+- Repetir el Test exercises de la **Unidad 1** con "Repeat the test" para subir
+  Grammar 75% (alguna variante de Q1/Q4/Q5 no detectada en el XML). El test de
+  la **Unidad 2** ya salió **100%** con V43-V48.
 - Automatizar el paso "Vocabulary practice" (Add mark) como parte del
   flujo estándar de V31/V32 en vez de manual por lección → ya validado como
-  bucle en-página (V32); incorporarlo al flujo automático de lecciones.
+  bucle en-página (V32) y de nuevo con 19/19 tarjetas (r10); incorporarlo al
+  flujo automático de lecciones.
