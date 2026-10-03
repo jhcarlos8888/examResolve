@@ -52,6 +52,14 @@ node scripts/recon.mjs docs/urls-recon-r2.txt runtime/recon-r2-output.json
   interrogativos por respuesta, clic real en radios, selección de frame,
   lectura del sujeto con `childNodes`, forma larga/corta de *to be*). Incluye
   el registro de **errores del agente** y qué corregir en cada caso.
+- **Ronda 13 — Dexway CUN, Unidad 3 "Showroom: negative form of to be"** (sin
+  recon nuevo): pasos 17-20 completados en modo auto → **17 Passed, 19 Passed,
+  20 Passed, 18 Failed** (un ítem con `Show solution` autorizado), lección
+  **54%**. Hallazgos **V70-V76**: falso positivo `HoverWhileDisabled`, el
+  `input.Gap` de `UIExerScreens` exige teclado real, ids duplicados
+  `SPAN`+`INPUT`, el `Next` de `UIExerScreens` sí acepta clic JS, la forma
+  contraída la decide la frase modelo, `theme-rightc` como verificación y el
+  `kind` de este showroom. 6 errores nuevos del agente documentados.
 - **43 páginas/flujo probados en profundidad** (11 r1 + 7 r2 + 2 r3 + 4 r4
   + 2 r5 + 5 r6 + 1 r7 + 3 r8 + 1 r9 + 4 r10 + 2 r11 + 1 r12) y **4 modos de
   disparo validados**: `auto`, `semi`
@@ -1046,15 +1054,126 @@ archivo** → no se pueden mapear por nombre (V1/V51). El clic JS **sí** funcio
 en `img.AnimacionFlash2_GreenClue` y el avance real es **el cambio de MP3 en
 curso**. El `Next` del showroom **requiere clic real de ratón**: con
 `element.click()` no responde.
-
 #### V69 — Regla de *to be* completa y sus dos variantes
 
 - **Forma larga** (opciones `am/are/is/s`): sujeto `I` → `am`;
   `you/we/they`, o sujeto compuesto con `and`, o sustantivo en plural (termina
-  en `s/sh/ch/x/z`) → `are`; `he/she/it/that/who/there/this/whose` (también con
-  el apóstrofo pegado, `He'`) → `s` (posesivo); nombre propio o singular → `is`.
+  en `s/sh/ch/x/z`) → `are`; `he/she/it/that/who/there/this/whose` (también
+  con el apóstrofo pegado, `He'`) → `s` (posesivo); nombre propio o singular →
+  `is`.
 - **Forma corta** (opciones `is/m/re`): `I'` → `m`; `you/we/they'` → `re`;
   resto → `is`.
+
+### Ronda 13 — Unidad 3 Dexway: showroom de formas negativas (V70-V76)
+
+Lección *Showroom: negative form of "to be"* del curso Virtual English
+Beginner 1 (CUN). Objetivo del usuario: terminar los pasos **17-20** en modo
+auto, dejando intactos los pasos 11-14 y 16 que ya venían `Failed`.
+
+| Paso | Ejercicio | Tipo | Resultado |
+| --- | --- | --- | --- |
+| 17 | Exercise 7 — *fill in the gaps with the correct word from the list* | radio (`img.Radio` en banco de 3) | ✅ **Passed** |
+| 18 | Exercise 8 — *fill in the gaps with the other contracted form* | texto (`input.Gap`) | ❌ **Failed** (1 ítem con `Show solution`) |
+| 19 | Exercise 9 — *fill in the gaps with the correct word from the list* | radio (banco de 4) | ✅ **Passed** |
+| 20 | Vocabulary practice | 14 tarjetas `.Card` | ✅ **Passed** (14/14 `Mark On`) |
+
+**Nota final: `Lesson completed 54%`** — Reading 73% · **Writing 8%** ·
+Listening 100% · Pronunciation 83% · Vocabulary 100%. El 46% restante **no es de
+este tramo**: viene de los pasos 11, 12, 13, 14 y 16, que ya estaban `Failed` de
+una pasada anterior y que el usuario pidió no tocar. El **Writing 8%** apunta a
+un exercise de escritura практиicamente vacío en esos pasos previos.
+
+Respuestas (todas verificadas por el color de acierto `var(--theme-rightc)`
+en el hueco, V75):
+
+- **Exercise 7** (banco `are not` / `aren't` / `re not`) — modelo + ítem:
+  `They' ▓▓▓ here.` → `re not`; `My mother and Mina ▓▓▓ Swedish.` → `are not`;
+  `Jordan and I ▓▓▓ in England.` → `are not`; `We' ▓▓▓ sales assistants.` →
+  `re not`.
+- **Exercise 8** (`input.Gap`, forma contraída, la decide el modelo):
+  `She ▓▓▓ my friend.` → `isn't`; `He ▓▓▓ in the office.` → `isn't`;
+  `It ▓▓▓ a pencil.` → **`'s not`** (no se dedujo: hizo falta `Show solution`,
+  autorizado por el usuario); `She ▓▓▓ an actress.` → `'s not`.
+- **Exercise 9** (banco `'re not` / `are not` / `aren't` / `re not`):
+  `My father and I ▓▓▓ from Bristol.` → `are not`; `You and Jim ▓▓▓ actors.` →
+  `aren't`; `You' ▓▓▓ married.` → `re not`; `You ▓▓▓ my parents.` → `aren't`.
+
+#### V70 — "HoverWhileDisabled" contiene "Disabled": falso positivo al detectar el botón deshabilitado
+
+La clase del botón es `Button NEXT HoverWhileDisabled Highlighted`. Un
+`/Disabled/i.test(className)` da **true** porque el subtexto `"Disabled"` está
+dentro de `"HoverWhileDisabled"`, y el agente se quedó **6 s en un bucle de poll**
+esperando un botón que ya estaba habilitado. Matchea la clase como token
+(`classList.contains('Disabled')`) o lee `b.disabled === true`.
+
+#### V71 — `input.Gap` de `UIExerScreens` ignora el setter nativo
+
+A diferencia del writing assignment (V39) y del test de unidad (V43), este
+submotor valida con **eventos de teclado reales**. Con el setter nativo +
+`input`/`change` el valor se escribe pero el `style` conserva
+`color: var(--theme-c-error)` y `Next` no avanza: **bucle infinito en el mismo
+ítem**. Lo que funciona es `page.mouse.click()` sobre el input →
+`Control+a` → `Delete` → `page.keyboard.type(ans, { delay: 70 })` →
+`element.click()` en `[title="Next"]`. El **color de error desaparece al teclear
+de verdad**: ese es el indicador de "el motor ha aceptado el texto".
+
+#### V72 — Ids duplicados `SPAN` + `INPUT`: `getElementById` devuelve el SPAN
+
+`span#UIControlLangInput_8_1` envuelve a `input#UIControlLangInput_8_1`.
+`getElementById(id)` devuelve el `SPAN`, y llamar al setter de
+`HTMLInputElement.prototype.value` sobre un `SPAN` lanza
+`TypeError: Illegal invocation`. Usa `querySelector('input.Gap')`.
+
+#### V73 — El `Next` de `UIExerScreens` responde al clic JS, no al de ratón
+
+Contraprueba de V68 (que era del showroom). Este `Next` vive en el borde
+derecho (`rect.x ≈ 2000` en una ventana de 2048) y `page.mouse.click()` en esas
+coordenadas **no dispara hover ni acción**: el punto cae sobre el iframe del LMS
+y el evento no llega al frame de la lección. `element.click()` desde dentro del
+frame sí avanza de ítem. Los **radios**, en cambio, siguen exigiendo clic real
+(V64): en la misma pantalla el clic sintético no registró la selección.
+
+#### V74 — La forma contraída la decide el modelo, no la gramática
+
+En *"fill in the gaps with the **other contracted form** of to be"* hay dos
+colocaciones posibles y el ejercicio alterna. El **modelo** dice cuál:
+
+| Modelo | Respuesta | Frase resultante |
+| --- | --- | --- |
+| `It isn't a pencil.` | **`'s not`** | `It's not a pencil.` |
+| `She's not my friend.` | **`isn't`** | `She isn't my friend.` |
+
+```js
+const ans = /\b(isn't|aren't|am not)\b/.test(modelo) ? "'s not" : "isn't";
+```
+
+En el Exercise 9 (banco con `'re not`): sujeto **con apóstrofo ya puesto**
+(`You'`, `They'`) → la **cola** (`re not`, o `m not` tras `I'`); `you` (incluso
+"you and Jim") → **`aren't`**, nunca `'re not` porque *"You 're not actors"* es
+agramatical; `they`/`we` → `'re not`; `I` → `'m not`; `he/she/it` → `'s not`.
+En el Exercise 7 (banco **sin** `'re not`) el motor quiere la forma sin
+contraer el sujeto: `Jordan and I ▓▓▓` → `are not`, `We' ▓▓▓` → `re not`.
+
+#### V75 — `theme-rightc` es la verificación fiable de todo el showroom
+
+Cuando el motor acepta una respuesta, la inserta en el hueco con
+`style="color: var(--theme-rightc); font-weight: bold"`. Sirve para los dos
+submotores (radio y texto), y permite el ciclo por ítem en **1 llamada**: leer
+modelo + hueco → derivar (V74) → actuar → comprobar `theme-rightc` → `Next`.
+Cuando la respuesta es **incorrecta**, el hueco conserva
+`color: var(--theme-c-error)` y `Next` no avanza: es la señal de *"cambia la
+derivación"*, no de *"el clic falló"*.
+
+#### V76 — `kind` de este showroom y Vocabulary practice
+
+`UIExerScreens` + `span[id$="_listsource"]` + `img.Radio`/`input.Radio` =
+Exercise 7/9 (palabra del banco, clic real). `UIExerScreens` + `input.Gap` =
+Exercise 8 (texto libre, teclado real). Ambos de **un ítem por pantalla**: un
+`Next` por ítem y `Show solution` de un solo uso por ronda (V54). Vocabulary
+practice: `.Card` × 14, cada una con su `[title="Add mark"]` pero solo visible
+el de la tarjeta activa → bucle `c.click()` + `c.querySelector('[title="Add
+mark"]').click()`, verificación de las 14 con `[class*=Mark]` en `On`, y
+`Next` → "Score Lesson completed X%".
 
 ## Errores del agente — no repetir
 
@@ -1083,6 +1202,34 @@ repitas.
    de nota irrecuperable** en esa pasada. **Corrección: V59** — el estado
    interno (`gapsEmpty === 0` con el hueco cerrado, o el radio marcado) es la
    única prueba; el número de paso no lo es.
+5. **Detectaste `Next` como deshabilitado y esperaste en bucle.** El `className`
+   es `Button NEXT HoverWhileDisabled Highlighted` y tu regex
+   `/Disabled/i` matcheaba el subtexto dentro de `HoverWhileDisabled`.
+   Perdiste ~6 s de poll sobre un botón que sí respondía. **Corrección:
+   V70** — matchea la clase como token o lee la propiedad `disabled`.
+6. **Repetiste el setter nativo en un `input.Gap` cuatro veces.** Este
+   submotoro no lo registra: el valor se escribe pero el motor mantiene
+   `theme-c-error` y `Next` no avanza, así que el ciclo se repitió sobre el
+   mismo ítem. **Corrección: V71** — en `UIExerScreens` el texto va con
+   `page.mouse.click` + `page.keyboard.type`, y el color de error desapareciendo
+   es la prueba de que el motor lo aceptó.
+7. **Usaste `getElementById` sobre un control cuyo id está duplicado** y el
+   setter nativo lanzó `TypeError: Illegal invocation` (`SPAN` e `INPUT`
+   comparten id). **Corrección: V72** — `querySelector('input.Gap')`.
+8. **Asumiste que el `Next` de `UIExerScreens` necesitaba clic real** porque
+   V68 lo dice del showroom. Clic real en el borde derecho no hace nada y te
+   dejó bloqueado; `element.click()` sí avanza. **Corrección: V73** — el
+   comportamiento depende del submotor, no del motor.
+9. **Derivaste la forma contraída solo con la gramática del sujeto** y
+   fallaste dos ítems: `isn't` y `It's` fueron ambos rechazados en `It ▓▓▓ a
+   pencil.` (la respuesta era `'s not`). **Corrección: V74** — la coloca la
+   decide la frase **modelo**: si el modelo contrae `isn't`, el ítem quiere
+   `'s not`, y al revés. Y `you` + `and` nunca usa `'re not`.
+10. **Insististe con dos candidatos antes de avisar.** Paraste y preguntaste,
+   y el usuario autorizó `Show solution`: fue lo correcto, pero por poco. La
+   regla que te faltaba era **V75**: leer el color del hueco
+   (`theme-rightc` = acierto, `theme-c-error` = rechazo) convierte cada
+   intento en una señal y evita gastar candidatos a ciegas.
 
 **Fallos técnicos concretos que costaron tiempo** (mismo origen: parseo o clic
 sintético en lugar de datos/clic reales):

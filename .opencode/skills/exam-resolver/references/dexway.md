@@ -655,3 +655,110 @@ JavaScript. Son dos los casos confirmados:
 En el showroom el clic JS **sí** vale para las imágenes
 `img.AnimacionFlash2_GreenClue`; lo que no acepta clic sintético es el `Next`
 (V68).
+
+### Motor Dexway — showroom de formas negativas: V70-V75 (ronda 13, Unidad 3)
+
+Ronda sobre *Showroom: negative form of "to be"*, ejercicios 7, 8 y 9 +
+Vocabulary practice. Resultado: pasos 17 y 19 y 20 `Passed`, 18 `Failed`
+(un ítem resuelto con `Show solution`, autorizado por el usuario), lección
+**54%** (el 46% restante venía de los pasos 11-14 y 16, ya `Failed` de antes).
+
+Todos estos ejercicios usan el par **modelo + ítem**: la primera frase es el
+modelo y la segunda lleva el hueco. Esa estructura es la clave para derivar la
+respuesta.
+
+- **V70 — NUNCA detectes "deshabilitado" por subtexto de clase**. La clase del
+  botón es `Button NEXT HoverWhileDisabled Highlighted`: el subtexto
+  `"Disabled"` aparece dentro de `"HoverWhileDisabled"`, así que un
+  `/Disabled/i.test(className)` da **falso positivo** y te hace esperar en
+  bucle un botón que sí está habilitado. Matchea la clase **entera** como token
+  (`classList.contains('Disabled')`) o usa `b.disabled === true`.
+
+- **V71 — `input.Gap` de `UIExerScreens` NO acepta solo el setter nativo**.
+  A diferencia del writing assignment (V39) y del test (V43), aquí el motor
+  valida con eventos de teclado reales: con el setter nativo + `input`/`change`
+  el valor queda escrito pero el `style` conserva `color: var(--theme-c-error)`
+  y `Next` no hace nada → bucle infinito en el mismo ítem. **Receta que sí
+  funciona**:
+
+  ```js
+  async (page) => {
+    const g = await frame.evaluate(() => {
+      const q = document.querySelector('input.Gap').getBoundingClientRect();
+      return { x: q.x + q.width / 2, y: q.y + q.height / 2 };
+    });
+    await page.mouse.click(g.x, g.y);            // foco real
+    await page.keyboard.press('Control+a');
+    await page.keyboard.press('Delete');
+    await page.keyboard.type(ans, { delay: 70 }); // teclado real
+    await frame.evaluate(() => document.querySelector('[title="Next"]').click());
+  }
+  ```
+
+  El color de error **desaparece** al teclear de verdad: ese es el indicador de
+  "el motor ha aceptado el texto".
+
+- **V72 — Los ids de los controles están DUPLICADOS en un `SPAN` y un
+  `INPUT`**: `span#UIControlLangInput_8_1` envuelve a `input#UIControlLangInput_8_1`.
+  `document.getElementById(id)` devuelve el `SPAN` y el setter nativo lanza
+  **`TypeError: Illegal invocation`**. Usa siempre `querySelector('input.Gap')`
+  o `input.Gap#id`, nunca `getElementById` para estos controles.
+
+- **V73 — El `Next` de `UIExerScreens` responde al clic JS, NO al de ratón**
+  (contraprueba de V68, que era del showroom). Vive en el borde derecho
+  (`rect.x ≈ 2000` con ventana de 2048) y `page.mouse.click()` en esas
+  coordenadas no dispara hover ni acción: el punto cae sobre el iframe del
+  LMS y el evento no llega al frame. **`element.click()` desde dentro del frame
+  sí avanza de ítem.** Radiios, en cambio, siguen exigiendo clic real (V64).
+
+- **V74 — La forma contraída la decide el MODELO, no la gramática del
+  sujeto**. En "fill in the gaps with the **other contracted form** of *to be*"
+  hay dos colocaciones posibles y el ejercicio alterna entre ellas:
+
+  | Modelo | Respuesta del ítem | Frase resultante |
+  | --- | --- | --- |
+  | `It isn't a pencil.` | **`'s not`** | `It's not a pencil.` |
+  | `She isn't an actress.` | **`'s not`** | `She's not an actress.` |
+  | `She's not my friend.` | **`isn't`** | `She isn't my friend.` |
+  | `He's not in the office.` | **`isn't`** | `He isn't in the office.` |
+
+  ```js
+  const ans = /\b(isn't|aren't|am not)\b/.test(modelo) ? "'s not" : "isn't";
+  ```
+
+  En el **Exercise 9** (banco con `'re not` / `are not` / `aren't` / `re not`)
+  las reglas son:
+  - El sujeto **ya trae apóstrofo** (`You'`, `They'`) → va la **cola**:
+    `re not` (o `m not` tras `I'`).
+  - `you` (incluido "you and Jim") → **`aren't`**. Nunca `'re not`: *"You 're
+    not actors"* es agramatical.
+  - `they` / `we` → `'re not`. `I` → `'m not`. `he/she/it` → `'s not`.
+
+  En el **Exercise 7** (banco `are not` / `aren't` / `re not`, sin `'re not`) el
+  motor quiere la forma **sin contraer** el sujeto: `Jordan and I ▓▓▓ in
+  England.` → `are not`, y `We' ▓▓▓ sales assistants.` → `re not`.
+
+- **V75 — El color de acierto es la verificación más fiable de todo el
+  showroom**. Cuando el motor acepta una respuesta, la inserta en el hueco con
+  `style="color: var(--theme-rightc); font-weight: bold"`. Sirve para los dos
+  submotores: radio (`span[id$="_listsource"]`) y texto (`input.Gap`, que
+  desaparece y es sustituido por un `<span>` con ese estilo). Con esto el ciclo
+  por ítem es **1 llamada**: leer modelo + hueco → derivar (V74) → actuar →
+  comprobar `theme-rightc` en el hueco → `Next`.
+
+  Ojo: en el submotor de texto, cuando la respuesta es **incorrecta** el hueco
+  conserva `color: var(--theme-c-error)` y `Next` no avanza. Es la señal de
+  "cambia la derivación", no de "el clic falló" — no repitas el mismo intento.
+
+- **V76 — `kind` para este showroom**: `UIExerScreens` con
+  `span[id$="_listsource"]` + `input.Radio`/`img.Radio` = Exercise 7/9 (palabra
+  del banco, clic real); con `input.Gap` = Exercise 8 (texto libre, teclado
+  real). Los dos son de **un ítem por pantalla**: un `Next` por ítem, y el
+  `Show solution` es de un solo uso por ronda (V54).
+
+- **Vocabulary practice (confirmado en esta ronda)**: `.Card` × 14, cada una con
+  su `[title="Add mark"]` pero **solo visible el de la tarjeta activa**. Bucle
+  en-página: `c.click()` (zoom) → `c.querySelector('[title="Add mark"]').click()`.
+  Verificación: las 14 con un `[class*=Mark]` en clase `On`. Luego `Next` →
+  pantalla "Score Lesson completed X%" con las skills (Reading / Writing /
+  Listening / Pronunciation / Vocabulary) — ese es el reporte del Paso 6.
