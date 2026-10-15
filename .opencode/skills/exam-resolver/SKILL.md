@@ -19,6 +19,7 @@ Referencias del proyecto:
 - `references/audio-y-visual.md` — preguntas con imagen/canvas y con audio.
 - `references/dexway.md` — motor Dexway: voz, role-play, tests (V31-V69).
 - `references/articulate-storyline.md` — motor Articulate Storyline (V24-V30).
+- `references/moodle.md` — motor Moodle `mod/quiz` (V77).
 - `docs/capacidades-playwright.md` — matriz escenario → herramienta, escalera R1-R5.
 - `AGENTS.md` — reglas generales de interacción y límites éticos.
 
@@ -125,6 +126,13 @@ Filtra los falsos positivos antes de contar nada: cookies (`name*=ot-group-id`),
 filtros de catálogo, login, widgets de filtro. Cuenta como examen solo si hay
 **enunciados con alternativas** o marcadores `Question X de Y` junto a un envío.
 
+Y **si la detección da examen** (o vayas a generar volcados de cualquier modo),
+**crea ya** la carpeta de registro de esta sesión:
+`resolveLogs/<AAAA-MM-DD>_<dominio>/` en la raíz del proyecto. Escribe ahí
+directamente cualquier volcado crudo (`*-find.yml`, snapshot) — así no ensucian la
+raíz aunque la sesión termine a medias (ver "Deja el registro de la sesión"). Si
+no hay examen y no generas volcados, no crees la carpeta.
+
 ## Paso 2 — Lectura completa de la pregunta
 
 Para cada pregunta:
@@ -201,6 +209,27 @@ Al terminar entrega siempre:
 - Incidencias: <bloqueos, preguntas ilegibles, dudas>
 ```
 
+### Deja el registro de la sesión (siempre, al cerrar)
+
+La carpeta `resolveLogs/<AAAA-MM-DD>_<dominio>/` se creó en el Paso 1; aquí se
+cierra su contenido. Es **archivo**, no se lee al arrancar:
+
+1. Comprueba que ningún volcado quedó suelto en la raíz: mueve los
+   `*-find.yml`/snapshots dentro de la carpeta (`/*-find.yml` está en
+   `.gitignore` como red de seguridad, no como licencia para dejarlos fuera).
+2. Escribe `resolveLogs/…/sesion.md`: URL/fecha, motor detectado, estructura
+   observada, resultado real (modo, puntuación) y qué quedó **por confirmar**.
+   Sin datos inventados: si no lo anotaste, dilo como pendiente, y
+   distingue lo **visto en un volcado** de lo **inferido**.
+3. Si apareció un **patrón o motor nuevo**, propón su promoción a
+   `references/<motor>.md` + una entrada `V*` en `docs/pruebas-reales.md` — ahí es
+   donde queda versionado y de verdad reutilizable.
+
+`resolveLogs/*/*` (volcados crudos) está en `.gitignore`: no ensucian el repo.
+**El `sesion.md` sí se versiona** (`!resolveLogs/*/sesion.md`): es el resumen
+curado que sobrevive aunque borres los volcados. Los `ref` de accesibilidad de los
+volcados cambian en cada sesión: nunca los reutilices como selectores.
+
 ## Patrones generales: los que más cuestan
 
 Detalle completo en `references/patrones-comunes.md`.
@@ -246,6 +275,7 @@ genéricas fallan.
 | --- | --- |
 | Launch LTI `*.dexway.com/lti/enter`, iframes `content-packages`, botones `Repeat` / `Record voice` / `[title="Next"]`, `voicerecog.cae.net` | `references/dexway.md` |
 | `html5/data/js/*.js` con `window.globalProvideData('slide', …)`, `.cs-button`, `slide-object-*`, raíz `#preso`, `window.require` AMD | `references/articulate-storyline.md` |
+| URL `/mod/quiz/attempt.php` o `/mod/quiz/summary.php`, bloque "Navegación por el cuestionario" con enlaces `Pregunta N` / "Esta página" / "Terminar intento...", `group "Pregunta N Respuesta"` (interfaz comprobada en español) | `references/moodle.md` |
 | `<audio>`/`<source>`, iframes YouTube, botones "Play audio"/"Listen", markers de transcript, `speechSynthesis` | `references/audio-y-visual.md` |
 | Controles por coordenadas, canvas, o preguntas dibujadas como imagen | `references/audio-y-visual.md` |
 | Cualquier otro caso | sigue solo con este archivo + `references/patrones-comunes.md` |

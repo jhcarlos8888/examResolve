@@ -60,13 +60,20 @@ node scripts/recon.mjs docs/urls-recon-r2.txt runtime/recon-r2-output.json
   `SPAN`+`INPUT`, el `Next` de `UIExerScreens` sí acepta clic JS, la forma
   contraída la decide la frase modelo, `theme-rightc` como verificación y el
   `kind` de este showroom. 6 errores nuevos del agente documentados.
+- **Ronda 14 — Motor nuevo: Moodle** (`cdigital.cun.edu.co/mod/quiz/`, sesión
+  autenticada, 1 URL): examen de investigación en ingeniería de **10 preguntas
+  paginadas** (1 por página) resuelto **10/10 con puntuación visible**.
+  Hallazgo **V77** + ficha nueva `references/moodle.md`. Registro completo de la
+  sesión en `resolveLogs/2026-10-15_cdigital.cun.edu.co/` (el `sesion.md` va
+  versionado; los 10 volcados crudos quedan en `.gitignore`).
 - **43 páginas/flujo probados en profundidad** (11 r1 + 7 r2 + 2 r3 + 4 r4
-  + 2 r5 + 5 r6 + 1 r7 + 3 r8 + 1 r9 + 4 r10 + 2 r11 + 1 r12) y **4 modos de
+  + 2 r5 + 5 r6 + 1 r7 + 3 r8 + 1 r9 + 4 r10 + 2 r11 + 1 r12; desglose **sin
+  actualizar desde la r12** — r13 y r14 no entran en este conteo) y **4 modos de
   disparo validados**: `auto`, `semi`
   (confirmación con `question`), pestaña activa (`browser_tabs`) y URL
   (`resolve.sh` con guardia de perfil).
-- Hallazgos **V1-V69**.
-- Fecha: 2026-10-03.
+- Hallazgos **V1-V77**.
+- Fecha: 2026-10-03 (última actualización: 2026-10-15, ronda 14).
 
 ### Ronda 6 — CUN / SENA / Colombia (2026-10-03)
 
@@ -1175,6 +1182,42 @@ el de la tarjeta activa → bucle `c.click()` + `c.querySelector('[title="Add
 mark"]').click()`, verificación de las 14 con `[class*=Mark]` en `On`, y
 `Next` → "Score Lesson completed X%".
 
+### Ronda 14 — Motor nuevo: Moodle `mod/quiz` (V77)
+
+**Sitio**: `cdigital.cun.edu.co/mod/quiz/` (CUN, sesión autenticada por el
+usuario). Examen de investigación en ingeniería, **10 preguntas** de opción única,
+**1 por página**, resuelto **10/10 con puntuación visible**. Esta ronda no usó
+`recon.mjs` (página autenticada por sesión); los artefactos (10 volcados
+`browser_find`) y el detalle de la sesión están en
+`resolveLogs/2026-10-15_cdigital.cun.edu.co/`. Los volcados quedan **fuera del
+repo a propósito** (los `ref` de accesibilidad no son reutilizables); el
+`sesion.md` de esa carpeta **sí va versionado**.
+
+#### V77 — Moodle `mod/quiz`: fingerprint, paginación y estructura por pregunta
+
+- **Fingerprint** (ahora en el dispatcher y en `references/moodle.md`):
+  `/mod/quiz/attempt.php?attempt=…&cmid=…&page=N`, bloque **"Navegación por el
+  cuestionario"** con enlaces `Pregunta N` (el actual con "Esta página") y
+  **"Terminar intento..."** → `/mod/quiz/summary.php`.
+- **Por pregunta**: h3 `Pregunta N` + estado **"Sin responder aún"** (solo visible
+  en el volcado de la Q1) + **"Se puntúa como 0 sobre 1.0"** + h4 **"Enunciado de
+  la pregunta"** + `group "Pregunta N Respuesta"` (grupo ARIA; la respuesta única
+  se deduce del contexto, los radios no quedaron volcados).
+- **Dos verificaciones posibles** (a confirmar en la próxima sesión): el estado
+  textual debería dejar de decir "Sin responder aún" al marcar, y el `:checked` del
+  grupo. Encaja con V57 (verificar antes de avanzar) sin técnicas especiales: al
+  ser HTML/ARIA estándar, valen las reglas genéricas de la skill.
+- **Paginación en esta ronda**: 1 pregunta por página (`page=1…9` + ancla de la
+  actual; el `page=0` inicial no quedó volcado). **En Moodle el número de
+  preguntas por página lo configura el profesor**: comprueba cuántos
+  `group "…Respuesta"` hay por página antes de asumir paginación. Navegación por
+  el bloque lateral. La página de cierre es `summary.php` (resumen antes de
+  enviar; su contenido no quedó volcado).
+- **Límite**: exige login (regla V12, muro de login) y los tipos checkbox múltiple,
+  respuesta corta y true/false **no** se probaron en esta ronda. Pendientes
+  concretos (botón inferior de paginación, flujo de envío, valor de la puntuación
+  y método de selección usado) están escritos en la `sesion.md` de la carpeta.
+
 ## Errores del agente — no repetir
 
 Registro de los fallos reales de esta ronda, escritos en segunda persona como
@@ -1324,6 +1367,7 @@ sintético en lugar de datos/clic reales):
 | **Selección de frame con varios frames vivos** | Dexway `page.frames()` | ✅ de derecha a izquierda con `{auto, step}` (V65) |
 | **Sujeto partido en nodo de texto (`He'` + hueco)** | Dexway frases con `to be` | ✅ `childNodes` + normalizar (V66/V67) |
 | **`to be` en forma corta (`is/m/re`)** | Dexway paso 10 | ✅ `I'`→`m`, `you/we/they'`→`re` (V69) |
+| **Moodle `mod/quiz` (paginación configurable + navegación por bloques; 1/página en el ejemplo)** | cdigital.cun.edu.co (CUN) | ✅ **10/10 con puntuación visible** (V77) |
 
 ## Modos de disparo validados
 
@@ -1342,7 +1386,9 @@ sintético en lugar de datos/clic reales):
 - Modo `semi` sobre una página real **sin autoconfirmación** (el usuario
   confirma cada `question` en su terminal).
 - Pruebas de motores adicionales cuando aparezcan URLs públicas sin login
-  (Moodle/Google Forms suelen exigirlo; ver `docs/urls-recon-r2.txt`).
+  (Google Forms suele exigirlo; ver `docs/urls-recon-r2.txt`). **Moodle ya quedó
+  probado en sesión autenticada** en la ronda 14 (V77): quedan sus variantes de
+  pregunta (checkbox múltiple, respuesta corta, true/false) y el flujo de envío.
 - Nota: `javatpoint.com`, `recursostic.es`, `html5.laboratoriotec.es` y
   `test-online.es` no resuelven DNS en este entorno (error de red, no del
   agente).

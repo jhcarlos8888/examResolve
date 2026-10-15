@@ -1,3 +1,7 @@
 node_modules/
 runtime/
 *.log
+/*-find.yml
+# Volcados crudos de sesiones fuera del repo; el resumen curado (sesion.md) sí se versiona
+resolveLogs/*/*
+!resolveLogs/*/sesion.md
