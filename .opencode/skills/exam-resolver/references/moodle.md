@@ -2,7 +2,7 @@
 
 Evidencia: **Rondas 14, 15, 16 y 17**, `cdigital.cun.edu.co` (CUN) y
 `zajuna.sena.edu.co` (SENA), sesiones autenticadas 2026-10-15 y 2026-10-16
-(V77-V80 en `docs/pruebas-reales.md`).
+(V77-V81 en `docs/pruebas-reales.md`).
 Volcados/sesión: `resolveLogs/2026-10-15_cdigital.cun.edu.co/`,
 `resolveLogs/2026-10-16_cdigital.cun.edu.co/` y
 `resolveLogs/2026-10-16_zajuna.sena.edu.co/`.
@@ -41,7 +41,8 @@ Volcados/sesión: `resolveLogs/2026-10-15_cdigital.cun.edu.co/`,
 | Revisión (`review.php`) | **R17 visto por primera vez** (SENA): enlace "Revisión" en la fila del intento → `review.php?attempt=…&cmid=…`. Muestra **todas las preguntas en una sola página** (sin paginación ni bloque "Navegación por el cuestionario"), con veredicto **"Correcta"/"Incorrecta"**, "Se puntúa N sobre M" y la respuesta elegida. En CUN (r15/r16) ese enlace no apareció tras enviar — posible configuración del quiz; **sin confirmar** cuál lo habilita. |
 | Tema YUI (SENA) vs Bootstrap (CUN) | El diálogo "Comenzar intento" de SENA es YUI: el botón de confirmación es **`<input type=submit value="Comenzar intento" class="btn btn-primary">`** (no `<button>`), y el modal **no tiene la clase `.show`** → `.modal.show input.btn-primary` falla; usar `input[type=submit][value="Comenzar intento"]`. El modal de envío sí expone `button.btn-primary` dentro de `[role=dialog]` (igual que CUN). |
 | Checkbox (r17) | Moodle añade un **`input[type=hidden]` con el mismo `name`** que cada checkbox (`q<id>:<page>_choiceN`): un selector `input[name="q…_choice0"]` dispara **strict mode violation** (2 elementos). Usar siempre **`input[type=checkbox][name="q…_choice0"]`**. Verificación: `input[type=checkbox][name^="q<id>:<page>_"]:checked`. |
-| Envío con HTTP 500 (r17) | Confirmar el envío pudo terminar en `chrome-error://chromewebdata/` (**HTTP 500** del servidor de SENA) y **el intento igual quedó registrado**. Ante un error tras el clic del modal: **no reenviar a ciegas**; recargar `view.php` y leer la tabla de intentos (fila "Finalizado / Enviado … / nota"). |
+| Envío con HTTP 500 (r17, r18) | Confirmar el envío pudo terminar en `chrome-error://chromewebdata/` (**HTTP 500** del servidor de SENA) y **el intento igual quedó registrado** (visto 2 veces seguidas: r17 y r18). Ante un error tras el clic del modal: **no reenviar a ciegas**; recargar `view.php` y leer la tabla de intentos (fila "Finalizado / Enviado … / nota"). |
+| **V81 — review del intento previo como fuente de claves (r18)** | Si el quiz tiene **varios intentos** y la revisión habilitada, el `review.php` del intento previo expone **veredicto por pregunta** ("Correcta"/"Incorrecta") con la opción marcada, y **el orden de preguntas se mantiene entre intentos**. Estrategia: replicar los valores que el intento previo **acertó** y, en las que **falló**, descartar la opción ya probada y razonar entre las restantes. Se lee **antes de empezar el intento nuevo** (enlace "Revisión" en la tabla de `view.php`). Ir a `view.php`→`review.php` y **regresar al intento por URL directa** (`attempt.php?attempt=…&page=N`) es seguro: el intento sigue abierto y las respuestas guardadas se conservan (verificado en r18: Q7 "Respuesta guardada" al volver). **Método "Calificación más alta"** ⇒ reintentar nunca baja la nota (r18: 79,00 → 93,00). |
 
 ## Ruido a filtrar en el DOM (ronda 15)
 

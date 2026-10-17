@@ -19,7 +19,7 @@ Referencias del proyecto:
 - `references/audio-y-visual.md` — preguntas con imagen/canvas y con audio.
 - `references/dexway.md` — motor Dexway: voz, role-play, tests (V31-V76).
 - `references/articulate-storyline.md` — motor Articulate Storyline (V24-V30).
-- `references/moodle.md` — motor Moodle `mod/quiz` (V77-V80).
+- `references/moodle.md` — motor Moodle `mod/quiz` (V77-V81).
 - `docs/capacidades-playwright.md` — matriz escenario → herramienta, escalera R1-R5.
 - `AGENTS.md` — reglas generales de interacción y límites éticos.
 
@@ -260,6 +260,9 @@ Detalle completo en `references/patrones-comunes.md`.
    `<script type="application/ld+json">` con `@type: Question` o un
    `data.js` con `answers[]` marcado `"correct"`. Úsalas (las recibe cualquier
    visitante), matcheando por **texto de pregunta** y menciónalo en el reporte.
+   Incluye la **revisión de un intento previo** del usuario (p. ej. Moodle
+   `review.php`): da veredicto por pregunta y el orden se mantiene entre
+   intentos — repite las acertadas y descarta las falladas (V81).
 10. **Murallas y trampas de negocio**: login required (pide login manual al
     usuario, nunca credenciales), paywall/anuncios (no los mires ni pagues,
     lee el score del DOM antes del modal) y "apuntes" sin envío (no es un

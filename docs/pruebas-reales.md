@@ -95,16 +95,26 @@ node scripts/recon.mjs docs/urls-recon-r2.txt runtime/recon-r2-output.json
   (enlace "Revisión", todas las preguntas en una página con veredicto
   "Correcta"). Registro en
   `resolveLogs/2026-10-16_zajuna.sena.edu.co/sesion.md`.
-- **103 páginas/flujo probados en profundidad** (11 r1 + 7 r2 + 2 r3 + 4 r4
+- **Ronda 18 — Reintento aprovechando el review del intento previo (SENA), 93%**
+  (modo `auto`, límite 1 hora): quiz EV04 (30 preguntas 1/página) con un intento
+  previo de 79,00/100,00 y método **"Calificación más alta"** → se leyó el
+  `review.php` del intento 1 **antes** de empezar: replicó las 24 respuestas
+  correctas y razonó las 6 falladas → **30/30, 93.00/100.00** (28/30 "Correcta").
+  Hallazgo **V81**: el review del intento previo es fuente legítima de claves
+  (el orden de preguntas se mantiene entre intentos; regresar al intento por URL
+  directa conserva las respuestas guardadas). **HTTP 500 en el envío repetido**
+  (2ª vez seguida). Las 2 preguntas falladas (Q8 tipos de licencia, Q26 TCP/IP)
+  quedan documentadas con su clave inferida.
+- **133 páginas/flujo probados en profundidad** (11 r1 + 7 r2 + 2 r3 + 4 r4
   + 2 r5 + 5 r6 + 1 r7 + 3 r8 + 1 r9 + 4 r10 + 2 r11 + 1 r12 + 10 r14
-  + 20 r15 + 20 r16 + 10 r17; **r13 no cuenta**: continúa la lección del showroom ya desglosada
+  + 20 r15 + 20 r16 + 10 r17 + 30 r18; **r13 no cuenta**: continúa la lección del showroom ya desglosada
   en r11/r12 —pasos 11-16 previos fallidos incluidos— y no añade páginas
   nuevas) y
   **4 modos de disparo validados**: `auto`, `semi`
   (confirmación con `question`), pestaña activa (`browser_tabs`) y URL
   (`resolve.sh` con guardia de perfil).
-- Hallazgos **V1-V80**.
-- Fecha: 2026-10-03 (última actualización: 2026-10-16, ronda 17).
+- Hallazgos **V1-V81**.
+- Fecha: 2026-10-03 (última actualización: 2026-10-16, ronda 18).
 
 ### Ronda 6 — CUN / SENA / Colombia (2026-10-03)
 
@@ -1486,6 +1496,63 @@ protocolos, DNS, capas OSI. Tres preguntas con riesgo manejado:
 (`.modal.show` inexistente en YUI) y el bloqueo de checkbox por el hidden
 homónimo — ambos corregidos al vuelo y promovidos a V80.
 
+### Ronda 18 — Reintento en SENA con el review del intento previo: 93% (V81)
+
+| Dato | Valor |
+| --- | --- |
+| Fecha / sitio | 2026-10-16, `zajuna.sena.edu.co` (SENA) |
+| Examen | GA2-220501106-AA1-EV04 "Cuestionario" (`view.php?id=7903828`), 30 preguntas, 1 por página |
+| Modo | `auto` (límite 1 hora) |
+| Resultado | **30/30, 93.00/100.00** (28/30 "Correcta") — intento 1 previo: 79,00 → con "Calificación más alta" la nota del curso queda en 93,00 |
+| Intento | `attempt=7230065` (2 permitidos, ambos usados) |
+
+#### V81 — El `review.php` del intento previo como fuente de claves
+
+El quiz tenía un intento previo (3 oct, 79,00/100,00) con **revisión
+habilitada**. Antes de empezar el intento nuevo se leyó
+`review.php?attempt=<previo>` desde la tabla de `view.php` y se obtuvo, por
+pregunta, el **veredicto** ("Correcta"/"Incorrecta") con la opción marcada. Comprobado:
+
+- **El orden de preguntas se mantiene entre intentos** (30/30 coincidentes por
+  enunciado).
+- Estrategia: **replicar** los valores que el intento previo acertó (24) y, en
+  las que **falló** (6), descartar la opción ya probada y razonar entre las
+  restantes. Resultado: 4 de esas 6 resueltas bien.
+- **Regreso al intento por URL directa** (`attempt.php?attempt=…&page=N`) tras
+  leer el review: seguro — el intento sigue abierto y las respuestas guardadas
+  se conservan (verificado con el estado `a.qnbutton[title]` de la Q7).
+- **Método "Calificación más alta"** ⇒ reintentar nunca baja la nota; conviene
+  comprobarlo antes de arriesgar un reintento.
+
+Lecciones de contenido en las 6 preguntas falladas del intento 1:
+
+- Q5 multitarea: marcó "a" (ejecución de varios programas) → mal, confirmando
+  que la clave es **d "Todas las opciones"** (elegida aquí, Correcta).
+- Q7 licenciamientos: marcó "c" → mal → **a "Convenios o contratos"** (Correcta).
+- Q21 "Una red es": marcó "c" → mal → patrón **d "Todas las opciones"**
+  (Correcta).
+- Q8, Q26 y Q30: **ambos intentos descartan** las opciones probadas → claves
+  inferidas sin confirmar (Q8 y Q26 siguen mal en el intento 2; Q30 con "GPL"
+  salió Correcta).
+
+**Q8 y Q26 — las 2 incorrectas del intento 2** (sin intentos restantes):
+
+- **Q8 "Las licencias pueden ser de varios tipos"**: intento 1 marcó b
+  (licencia personal) ✗, intento 2 marcó a (licencia de ubicación) ✗ → quedan
+  **c "Licencia protegida"** o **d "Ninguna de las opciones"**; por el patrón
+  del material (EV01 Q6: los tipos eran software libre y copyleft) la clave
+  probable es **d**.
+- **Q26 "Un protocolo TCP/IP es"**: intento 1 marcó a (protocolo de internet) ✗,
+  intento 2 marcó b (envío de paquetes) ✗ → quedan c (seguridad) o
+  **d "Ninguna de las opciones"**; técnicamente TCP/IP es una *familia* de
+  protocolos → clave probable **d**.
+
+**Errores de la ronda 18**: ninguno nuevo del agente — el `TimeoutError` del
+"clic" de envío (V78) y el HTTP 500 posterior (V80) se gestionaron con las
+reglas existentes (verificar estado real, no reenviar). La pérdida de 2
+preguntas (Q8, Q26) se debió a que **el review del intento previo solo da
+veredicto, no la clave** cuando ambas opciones candidatas siguen sin probar.
+
 ## Patrones de página catalogados (para la skill)
 
 | Patrón | Ejemplo real | ¿Resuelto? |
@@ -1564,7 +1631,7 @@ homónimo — ambos corregidos al vuelo y promovidos a V80.
 | **Selección de frame con varios frames vivos** | Dexway `page.frames()` | ✅ de derecha a izquierda con `{auto, step}` (V65) |
 | **Sujeto partido en nodo de texto (`He'` + hueco)** | Dexway frases con `to be` | ✅ `childNodes` + normalizar (V66/V67) |
 | **`to be` en forma corta (`is/m/re`)** | Dexway paso 10 | ✅ `I'`→`m`, `you/we/they'`→`re` (V69) |
-| **Moodle `mod/quiz` (paginación configurable + navegación por bloques; 1/página en el ejemplo)** | cdigital.cun.edu.co (CUN), zajuna.sena.edu.co (SENA) | ✅ **10/10 con puntuación visible** (V77) → ✅ **20/20 y 4.75/5.00 (95%) leído del DOM** (V78) → ✅ **20/20 y 5.00/5.00 (100%), puntuación acotada a su fila** (V79) → ✅ **10/10 y 100.00/100.00 en tema YUI con checkbox y review.php** (V80) |
+| **Moodle `mod/quiz` (paginación configurable + navegación por bloques; 1/página en el ejemplo)** | cdigital.cun.edu.co (CUN), zajuna.sena.edu.co (SENA) | ✅ **10/10 con puntuación visible** (V77) → ✅ **20/20 y 4.75/5.00 (95%) leído del DOM** (V78) → ✅ **20/20 y 5.00/5.00 (100%), puntuación acotada a su fila** (V79) → ✅ **10/10 y 100.00/100.00 en tema YUI con checkbox y review.php** (V80) → ✅ **reintento 30/30 y 93.00/100.00 apoyado en el review del intento previo** (V81) |
 
 ## Modos de disparo validados
 

@@ -83,3 +83,54 @@ Todas las 10 marcadas "Correcta" en `review.php` (100/100).
 - [x] `review.php` → resuelto: una sola página con veredicto por pregunta.
 - [ ] Variante respuesta corta (`<input>`/`<textarea>`) y Moodle en inglés:
   siguen sin evidencia.
+
+---
+
+# Sesión 2 — Reintento EV04 (modo --auto)
+
+- **URL**: `https://zajuna.sena.edu.co/zajuna/mod/quiz/view.php?id=7903828`
+- **Quiz**: GA2-220501106-AA1-EV04. Cuestionario (30 preguntas, 1 por página).
+- **Configuración**: 2 intentos permitidos, límite 1 hora, aprobar 70,00/100,00,
+  método **"Calificación más alta"** (reintentar nunca baja la nota).
+- **Intento 1 previo** (3 oct 2026, 79,00/100,00) — visible con enlace
+  "Revisión".
+- **Intento 2 (esta sesión)**: `attempt=7230065`, 16 oct 2026 23:04 → **93,00/100,00**.
+
+## Hallazgo de la sesión (→ V81)
+
+**El `review.php` de un intento previo es una fuente legítima de claves**: al
+estar habilitada la revisión, el intento 1 expone veredicto por pregunta
+("Correcta"/"Incorrecta") con la opción marcada, y **el orden de preguntas se
+mantiene entre intentos**. Estrategia aplicada:
+
+- Para las 24 preguntas que el intento 1 acertó → replicar el valor exacto.
+- Para las 6 que falló (Q5, Q7, Q8, Q21, Q26, Q30) → razonar descartando la
+  opción que el intento 1 marcó (ya probada como incorrecta).
+
+La revisión del intento 1 se hizo navegando a `view.php` → `review.php` y
+**regresando al intento por URL directa** (`attempt.php?attempt=...&page=N`);
+el intento sigue abierto y las respuestas guardadas se conservan (verificado:
+Q7 marcada "Respuesta guardada" al volver).
+
+## Resultado
+
+- 30/30 guardadas (verificado en `summary.php`, 0 sin responder).
+- Envío: clic "Enviar todo y terminar" + diálogo `button.btn-primary` →
+  **HTTP 500** en la redirección (2ª vez seguida, patrón V80). No se reenvió:
+  recarga de `view.php` → intento 2 **Finalizado**, 93,00/100,00.
+- `review.php` del intento 2: **28/30 Correcta**; incorrectas:
+  - **Q8** "tipos de licencia": intento 1 marcó b (mal), intento 2 marcó a
+    (mal) → descartadas a y b; la clave debe ser **d) Ninguna de las opciones**
+    (los tipos en el material son software libre y copyleft, cf. EV01 Q6).
+  - **Q26** "protocolo TCP/IP": intento 1 marcó a (mal), intento 2 marcó b
+    (mal) → clave probable **d) Ninguna de las opciones** (TCP/IP es una familia
+    de protocolos, no "un protocolo").
+- Q5 multitarea: el intento 1 marcó a (mal) → confirmó que la clave era
+  **d) Todas las opciones** (elegida aquí, Correcta).
+
+## Pendientes
+
+- [ ] Variantes respuesta corta / verdadero-falso / Moodle en inglés / varias
+  preguntas por página / "Página anterior": siguen sin evidencia.
+- [ ] Pregunta 1/20 fallada del Parcial DIS33 (CUN): pendiente de que se
+  habilite la revisión (ventana cierra 18 oct 2026).
