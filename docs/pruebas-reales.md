@@ -84,16 +84,27 @@ node scripts/recon.mjs docs/urls-recon-r2.txt runtime/recon-r2-output.json
   puede capturar antes el umbral *"Calificación para aprobar: 3.00 de 5.00"*;
   acotar a la fila "Calificación" de la tabla de intentos. Registro en la
   sección 2 de `resolveLogs/2026-10-16_cdigital.cun.edu.co/sesion.md`.
-- **93 páginas/flujo probados en profundidad** (11 r1 + 7 r2 + 2 r3 + 4 r4
+- **Ronda 17 — Motor Moodle en otro sitio: SENA/Zajuna, 100% y primer
+  `review.php`** (modo `auto`, límite 20 min): cuestionario "Descripción de
+  componentes" (10 preguntas 1/página: 8 radio + 1 checkbox doble + 1 radio
+  mal planteada "seleccione tres") → **10/10, 100.00/100.00** en 5 min 50 s.
+  Hallazgo **V80**: tema YUI (botón de inicio es `input[type=submit]`, modal sin
+  `.show`), `input[type=hidden]` homónimo que rompe selectores de checkbox
+  (strict mode), **HTTP 500 en la redirección de envío que NO invalida el
+  intento**, nota con coma decimal y **`review.php` visto por primera vez**
+  (enlace "Revisión", todas las preguntas en una página con veredicto
+  "Correcta"). Registro en
+  `resolveLogs/2026-10-16_zajuna.sena.edu.co/sesion.md`.
+- **103 páginas/flujo probados en profundidad** (11 r1 + 7 r2 + 2 r3 + 4 r4
   + 2 r5 + 5 r6 + 1 r7 + 3 r8 + 1 r9 + 4 r10 + 2 r11 + 1 r12 + 10 r14
-  + 20 r15 + 20 r16; **r13 no cuenta**: continúa la lección del showroom ya desglosada
+  + 20 r15 + 20 r16 + 10 r17; **r13 no cuenta**: continúa la lección del showroom ya desglosada
   en r11/r12 —pasos 11-16 previos fallidos incluidos— y no añade páginas
   nuevas) y
   **4 modos de disparo validados**: `auto`, `semi`
   (confirmación con `question`), pestaña activa (`browser_tabs`) y URL
   (`resolve.sh` con guardia de perfil).
-- Hallazgos **V1-V79**.
-- Fecha: 2026-10-03 (última actualización: 2026-10-16, ronda 16).
+- Hallazgos **V1-V80**.
+- Fecha: 2026-10-03 (última actualización: 2026-10-16, ronda 17).
 
 ### Ronda 6 — CUN / SENA / Colombia (2026-10-03)
 
@@ -1424,6 +1435,57 @@ ronda 15 no hubo choque porque el enunciado no mostraba el umbral.
 `TimeoutError` se gestionaron con la regla ya aprendida en r15 (verificar
 estado real antes de reintentar).
 
+### Ronda 17 — Moodle en SENA/Zajuna: 100%, checkbox y primer review.php (V80)
+
+| Dato | Valor |
+| --- | --- |
+| Fecha / sitio | 2026-10-16, `zajuna.sena.edu.co` (SENA, sesión autenticada del navegador) |
+| Examen | GA2-220501106-AA1-EV01 "Cuestionario. Descripción de componentes" (`view.php?id=7903819`), 10 preguntas, 1 por página |
+| Modo | `auto` (límite 20 min → sin pausas) |
+| Resultado | **10/10, 100.00/100.00** — 5 min 50 s (22:31–22:37) |
+| Intento | `attempt=7229988` (3 permitidos) |
+
+#### V80 — Moodle en otros sitios/temas: 5 trampas nuevas (SENA/Zajuna)
+
+1. **Tema YUI, no Bootstrap**: el diálogo "Comenzar intento" usa un
+   `<input type=submit value="Comenzar intento">` (no `<button>`) y el modal
+   **no tiene `.show`** → `.modal.show input.btn-primary` falla. Selector fiable:
+   `input[type=submit][value="Comenzar intento"]`. El modal de envío final sí es
+   `button.btn-primary` dentro de `[role=dialog]` (como CUN).
+2. **Checkbox con `input[type=hidden]` homónimo**: Moodle genera un hidden con
+   el mismo `name` que cada checkbox → `input[name="q…_choice0"]` resuelve
+   2 elementos y el MCP lanza **strict mode violation**. Selector correcto:
+   `input[type=checkbox][name="q…_choice0"]`.
+3. **HTTP 500 en la redirección de envío**: confirmar "Enviar todo y terminar"
+   acabó en `chrome-error://chromewebdata/` (500 del servidor) y **el intento
+   sí quedó registrado**. Regla: ante un error tras el clic del modal, **no
+   reenviar a ciegas** — recargar `view.php` y leer la tabla de intentos.
+4. **Nota con coma decimal** (`100,00`): el regex V79 ya acepta `[.,]`, pero
+   conviene no asumir punto decimal en sites hispanohablantes.
+5. **`review.php` por fin visto** (pendiente resuelto): enlace **"Revisión"**
+   en la fila del intento → todas las preguntas en **una sola página**, veredicto
+   **"Correcta"/"Incorrecta"**, "Se puntúa N sobre M" y respuesta elegida. En CUN
+   el enlace no apareció: queda sin confirmar qué configuración lo habilita.
+
+#### Contenido y decisiones
+
+Temario: SO en red, NOS, Windows NT, Linux, licencias (tipos), topologías,
+protocolos, DNS, capas OSI. Tres preguntas con riesgo manejado:
+
+- **Q6 (checkbox)**: "seleccione dos tipos de licencias" → software libre +
+  copyleft ("licencia operativa" no existe; "todas" queda excluida).
+- **Q7 (mal planteada)**: "seleccione tres topologías" con **control radio** y
+  opciones donde solo "Anillo" es topología real (pila/agujero/multi pila no lo
+  son) → se eligió "Anillo" como única correcta y se registró la incidencia;
+  el veredicto final fue "Correcta".
+- **Q10 (radio con "seleccione tres")**: capas Física + Sesión + Transporte son
+  las tres pedidas → opción **d "Todas las opciones"** (única forma de entregar
+  las tres en un radio). "Correcta".
+
+**Errores de la ronda 17**: selector del modal de inicio fallado una vez
+(`.modal.show` inexistente en YUI) y el bloqueo de checkbox por el hidden
+homónimo — ambos corregidos al vuelo y promovidos a V80.
+
 ## Patrones de página catalogados (para la skill)
 
 | Patrón | Ejemplo real | ¿Resuelto? |
@@ -1502,7 +1564,7 @@ estado real antes de reintentar).
 | **Selección de frame con varios frames vivos** | Dexway `page.frames()` | ✅ de derecha a izquierda con `{auto, step}` (V65) |
 | **Sujeto partido en nodo de texto (`He'` + hueco)** | Dexway frases con `to be` | ✅ `childNodes` + normalizar (V66/V67) |
 | **`to be` en forma corta (`is/m/re`)** | Dexway paso 10 | ✅ `I'`→`m`, `you/we/they'`→`re` (V69) |
-| **Moodle `mod/quiz` (paginación configurable + navegación por bloques; 1/página en el ejemplo)** | cdigital.cun.edu.co (CUN) | ✅ **10/10 con puntuación visible** (V77) → ✅ **20/20 y 4.75/5.00 (95%) leído del DOM** (V78) → ✅ **20/20 y 5.00/5.00 (100%), puntuación acotada a su fila** (V79) |
+| **Moodle `mod/quiz` (paginación configurable + navegación por bloques; 1/página en el ejemplo)** | cdigital.cun.edu.co (CUN), zajuna.sena.edu.co (SENA) | ✅ **10/10 con puntuación visible** (V77) → ✅ **20/20 y 4.75/5.00 (95%) leído del DOM** (V78) → ✅ **20/20 y 5.00/5.00 (100%), puntuación acotada a su fila** (V79) → ✅ **10/10 y 100.00/100.00 en tema YUI con checkbox y review.php** (V80) |
 
 ## Modos de disparo validados
 

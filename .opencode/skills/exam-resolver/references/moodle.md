@@ -1,14 +1,17 @@
 # Motor Moodle — `mod/quiz`
 
-Evidencia: **Rondas 14, 15 y 16**, `cdigital.cun.edu.co` (CUN), sesiones autenticadas
-2026-10-15 y 2026-10-16 (V77, V78 y V79 en `docs/pruebas-reales.md`).
-Volcados/sesión: `resolveLogs/2026-10-15_cdigital.cun.edu.co/` y
-`resolveLogs/2026-10-16_cdigital.cun.edu.co/`.
+Evidencia: **Rondas 14, 15, 16 y 17**, `cdigital.cun.edu.co` (CUN) y
+`zajuna.sena.edu.co` (SENA), sesiones autenticadas 2026-10-15 y 2026-10-16
+(V77-V80 en `docs/pruebas-reales.md`).
+Volcados/sesión: `resolveLogs/2026-10-15_cdigital.cun.edu.co/`,
+`resolveLogs/2026-10-16_cdigital.cun.edu.co/` y
+`resolveLogs/2026-10-16_zajuna.sena.edu.co/`.
 
-> **Alcance de esta evidencia**: 2 intentos, opción única de 1 por página, interfaz
-> en **español**. Ronda 15: **20/20 contestadas, 4.75/5.00 (95%) con puntuación
-> leída del DOM** (no solo "visible en pantalla" como en la ronda 14). Lo que sigue
-> sin volcado/evidencia está en la lista "Por confirmar": no lo des como hecho.
+> **Alcance de esta evidencia**: r14-r16 (CUN): 2 intentos, opción única de 1
+> por página, interfaz en **español**, tema Bootstrap. r17 (SENA/Zajuna):
+> 1 intento (3 permitidos), 10 preguntas 1/página, **checkbox doble confirmado**,
+> tema **YUI**, nota con coma decimal. Lo que sigue sin volcado/evidencia está
+> en la lista "Por confirmar": no lo des como hecho.
 
 ## Fingerprint (carga este archivo si aparece)
 
@@ -34,7 +37,11 @@ Volcados/sesión: `resolveLogs/2026-10-15_cdigital.cun.edu.co/` y
 | Guardado | Tras marcar y navegar, los `a.qnbutton` del navigator llevan el estado real del servidor en el `title`: **"Pregunta N - Respuesta guardada"** / **"Sin responder aún"** y clase `answersaved`/`notyetanswered`. Es la mejor verificación previa al envío; el texto "Sin responder aún" del área de la pregunta **solo se actualiza al recargar/navegar**. |
 | Marcar para revisar | `button "Marcadas"` con texto visible **"Marcar pregunta"**. No interfiere con la respuesta. |
 | Fin del intento | Última página → **"Terminar intento..."** → `summary.php` (tabla: "N Respuesta guardada" por fila) → botón `#single_button*` **"Enviar todo y terminar"** → **diálogo** `[role=dialog]` "¿Entregar todas sus respuestas y terminar?" → confirmar con el botón `btn-primary` del modal (**sin `id`**; selector fiable `.modal.show button.btn-primary`). Confirmado de nuevo vuelve a `view.php`. |
-| Puntuación | En `view.php`, fila de la tabla de intentos: texto **`Calificación 5.00 de 5.00 (100%)`** (r16) / `4.75 de 5.00 (95%)` (r15) → regex `\d+([.,]\d+)?\s*(de|of)\s*\d+([.,]\d+)?` (**V79**: acotarlo a la fila "Calificación" de la tabla de intentos — `table tbody tr` con celdas `["Calificación", …]` — porque el regex sobre `body.innerText` puede capturar antes el umbral *"Calificación para aprobar: 3.00 de 5.00"*; visto en r16). La revisión individual (qué pregunta falló) **no estuvo disponible** tras enviar (sin enlace "Revisar"); si la ventana cierra el 18 oct (fecha de la landing) se **infieren** que entonces se habilita — **sin confirmar**. |
+| Puntuación | En `view.php`, fila de la tabla de intentos: texto **`Calificación 5.00 de 5.00 (100%)`** (r16) / `4.75 de 5.00 (95%)` (r15) → regex `\d+([.,]\d+)?\s*(de|of)\s*\d+([.,]\d+)?` (**V79**: acotarlo a la fila "Calificación" de la tabla de intentos — `table tbody tr` con celdas `["Calificación", …]` — porque el regex sobre `body.innerText` puede capturar antes el umbral *"Calificación para aprobar: 3.00 de 5.00"*; visto en r16; en r17 SENA la nota viene con **coma decimal** `100,00` → aceptar `[.,]`). La revisión individual **sí existe** como enlace **"Revisión"** en la fila del intento (r17, ver abajo). |
+| Revisión (`review.php`) | **R17 visto por primera vez** (SENA): enlace "Revisión" en la fila del intento → `review.php?attempt=…&cmid=…`. Muestra **todas las preguntas en una sola página** (sin paginación ni bloque "Navegación por el cuestionario"), con veredicto **"Correcta"/"Incorrecta"**, "Se puntúa N sobre M" y la respuesta elegida. En CUN (r15/r16) ese enlace no apareció tras enviar — posible configuración del quiz; **sin confirmar** cuál lo habilita. |
+| Tema YUI (SENA) vs Bootstrap (CUN) | El diálogo "Comenzar intento" de SENA es YUI: el botón de confirmación es **`<input type=submit value="Comenzar intento" class="btn btn-primary">`** (no `<button>`), y el modal **no tiene la clase `.show`** → `.modal.show input.btn-primary` falla; usar `input[type=submit][value="Comenzar intento"]`. El modal de envío sí expone `button.btn-primary` dentro de `[role=dialog]` (igual que CUN). |
+| Checkbox (r17) | Moodle añade un **`input[type=hidden]` con el mismo `name`** que cada checkbox (`q<id>:<page>_choiceN`): un selector `input[name="q…_choice0"]` dispara **strict mode violation** (2 elementos). Usar siempre **`input[type=checkbox][name="q…_choice0"]`**. Verificación: `input[type=checkbox][name^="q<id>:<page>_"]:checked`. |
+| Envío con HTTP 500 (r17) | Confirmar el envío pudo terminar en `chrome-error://chromewebdata/` (**HTTP 500** del servidor de SENA) y **el intento igual quedó registrado**. Ante un error tras el clic del modal: **no reenviar a ciegas**; recargar `view.php` y leer la tabla de intentos (fila "Finalizado / Enviado … / nota"). |
 
 ## Ruido a filtrar en el DOM (ronda 15)
 
@@ -47,15 +54,19 @@ curso) y botones "Enviar solicitud de contacto". **Filtra siempre por
 
 ## Por confirmar en la próxima sesión
 
-1. **Variantes de pregunta**: ambas rondas fueron 100% opción única; faltan
-   checkbox múltiple, respuesta corta (`<input>`/`<textarea>`) y true/false.
-2. **Moodle en inglés** y quiz con **varias preguntas por página**.
-3. **`review.php`** (revisión pregunta a pregunta tras el intento): URL, estructura
-   y si muestra la respuesta correcta; útil para nutrir `sesion.md` con la
-   pregunta fallada. (Si la ventana cierra el 18 oct, **infiero** que entonces se
-   habilita — sin confirmar.)
-4. **Botón "Página anterior"**: solo se usó el siguiente en ambas rondas;
+1. **Variantes de pregunta**: confirmadas opción única (r14-r16) y **checkbox
+   múltiple** (r17, Q6 "seleccione dos" — 2 de 2 correctas). Falta respuesta
+   corta (`<input>`/`<textarea>`) y true/false.
+2. **Moodle en inglés** y quiz con **varias preguntas por página** (todas las
+   rondas fueron 1/página).
+3. ~~**`review.php`**~~ → **resuelto en r17**: enlace "Revisión" en la fila del
+   intento; todas las preguntas en una página con veredicto "Correcta". En CUN
+   el enlace no apareció: queda sin confirmar qué configuración lo habilita.
+4. **Botón "Página anterior"**: solo se usó el siguiente en las rondas;
    comprobar su comportamiento (¿descarta cambios no guardados?).
+5. **Preguntas mal planteadas por el docente** (r17, Q7: "seleccione tres
+   topologías" con control radio): elegir la única respuesta correcta y
+   registrar la incidencia; aquí salió "Correcta" igualmente.
 
 ## Límites
 
