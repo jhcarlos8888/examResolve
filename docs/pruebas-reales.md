@@ -66,14 +66,25 @@ node scripts/recon.mjs docs/urls-recon-r2.txt runtime/recon-r2-output.json
   Hallazgo **V77** + ficha nueva `references/moodle.md`. Registro completo de la
   sesión en `resolveLogs/2026-10-15_cdigital.cun.edu.co/` (el `sesion.md` va
   versionado; los 10 volcados crudos quedan en `.gitignore`).
-- **43 páginas/flujo probados en profundidad** (11 r1 + 7 r2 + 2 r3 + 4 r4
-  + 2 r5 + 5 r6 + 1 r7 + 3 r8 + 1 r9 + 4 r10 + 2 r11 + 1 r12; desglose **sin
-  actualizar desde la r12** — r13 y r14 no entran en este conteo) y **4 modos de
-  disparo validados**: `auto`, `semi`
+- **Ronda 15 — Moodle de nuevo: Parcial 1 con score medido** (CUN, sesión
+  autenticada, modo `auto` con pausas de 2 min entre preguntas): **Parcial 1**
+  de Admin. de Bases de Datos, **20 preguntas** de opción única (1 por página)
+  → **20/20 contestadas, 4.75/5.00 (95%)**, enviado con el flujo completo
+  `Terminar intento...` → `summary.php` → diálogo de confirmación. Hallazgo
+  **V78**: flujo de envío definitivo, puntuación con su selector, verificación
+  de guardado vía `a.qnbutton[title]`, método real de selección (clic nativo +
+  `:checked`) y ruido de chrome a filtrar. Registro en
+  `resolveLogs/2026-10-16_cdigital.cun.edu.co/`.
+- **73 páginas/flujo probados en profundidad** (11 r1 + 7 r2 + 2 r3 + 4 r4
+  + 2 r5 + 5 r6 + 1 r7 + 3 r8 + 1 r9 + 4 r10 + 2 r11 + 1 r12 + 10 r14
+  + 20 r15; **r13 no cuenta**: continúa la lección del showroom ya desglosada
+  en r11/r12 —pasos 11-16 previos fallidos incluidos— y no añade páginas
+  nuevas) y
+  **4 modos de disparo validados**: `auto`, `semi`
   (confirmación con `question`), pestaña activa (`browser_tabs`) y URL
   (`resolve.sh` con guardia de perfil).
-- Hallazgos **V1-V77**.
-- Fecha: 2026-10-03 (última actualización: 2026-10-15, ronda 14).
+- Hallazgos **V1-V78**.
+- Fecha: 2026-10-03 (última actualización: 2026-10-16, ronda 15).
 
 ### Ronda 6 — CUN / SENA / Colombia (2026-10-03)
 
@@ -1218,6 +1229,61 @@ repo a propósito** (los `ref` de accesibilidad no son reutilizables); el
   concretos (botón inferior de paginación, flujo de envío, valor de la puntuación
   y método de selección usado) están escritos en la `sesion.md` de la carpeta.
 
+### Ronda 15 — Moodle: Parcial 1 completo, envío y score medido (V78)
+
+**Sitio**: `cdigital.cun.edu.co/mod/quiz/` (CUN, sesión autenticada por el
+usuario). **Parcial 1** de Admin. de Bases de Datos (DIS33), **20 preguntas** de
+opción única, **1 por página**, modo `auto` con pausas de 2 minutos entre
+preguntas (petición del usuario). Resultado: **20/20 contestadas →
+4.75/5.00 (95%)**, ~59 min de los 90 disponibles (de los que ~38 min fueron
+las 19 pausas de 2 min pedidas). Registro completo en
+`resolveLogs/2026-10-16_cdigital.cun.edu.co/`. Resolví los "por confirmar"
+2-5 de la ronda 14 (paginación inferior con su id real, flujo de envío,
+puntuación + selector, método de selección); siguen vivos los de variantes de
+pregunta, inglés, `review.php` y el botón "Anterior".
+
+#### V78 — Moodle: flujo de envío definitivo, puntuación y verificación de guardado
+
+- **Flujo completo de inicio y fin** (los puntos 1-2 y 5 de la ronda 14):
+  1. `view.php?id=<cmid>` → botón "Intento de cuestionario" → **diálogo**
+     "Comenzar intento" (aviso de tiempo límite) → el clic en su botón inicia
+     el cronómetro.
+  2. Por página: radio marcado → verificar → `text=Siguiente página` (el botón
+     es `#mod_quiz-next-nav`; `#next-page` **no existe** en esta plantilla).
+  3. Última página: ese mismo botón pasa a **"Terminar intento..."** y envía
+     `#responseform` (`action=…/processattempt.php`).
+  4. `summary.php`: tabla "N Respuesta guardada" por fila → botón `#single_button*`
+     "Enviar todo y terminar" → **diálogo** `[role=dialog]` "¿Entregar todas sus
+     respuestas y terminar?" (irreversible) → confirmar con
+     **`.modal.show button.btn-primary`** (el botón del modal no tiene `id`).
+  5. De vuelta en `view.php` con la puntuación visible.
+- **Puntuación con su selector** (punto 3 de la ronda 14): fila de la tabla de
+  intentos en `view.php`, texto `Calificación 4.75 de 5.00 (95%)` →
+  regex `\d+([.,]\d+)?\s*(de|of)\s*\d+([.,]\d+)?`.
+- **Verificación de guardado fiable** (punto 4): los `a.qnbutton` del navigator
+  llevan el estado del servidor en el `title`
+  ("Pregunta N - Respuesta guardada" / "Sin responder aún") y la clase
+  `answersaved`/`notyetanswered`. El texto "Sin responder aún" del área de la
+  pregunta **solo se actualiza al navegar**; el `title` del navigator es la
+  autoridad previa al envío (se usó antes de pulsar "Terminar intento...":
+  19/20 guardadas + la actual marcada en el DOM).
+- **Método real de selección** (punto 4 de la ronda 14, confirmado): clic
+  **nativo** sobre `input[name="q<id>:<page>_answer"][value="X"]` vía
+  `browser_click` con **selector CSS como `target`** (la firma es
+  `{element, target}`, no `ref`) + verificación
+  `input[name="…"]:checked`. Sin eventos extra, sin AJAX propio.
+- **Ruido a filtrar**: el `body` trae chrome de Moodle (radios
+  `message_blocknoncontacts`, checkboxes del modal de mensajes, `select#jump`
+  "Ir a…", botones "Enviar solicitud de contacto") que contamina una
+  extracción ingenua. Filtrar por `name^="q"` o por `.question`/`#region-main`.
+- **Revisión no disponible**: sin enlace "Revisar" en `view.php` tras enviar, por
+  lo que **la pregunta fallada (1/20) queda pendiente** de identificar; no se
+  dedujo. (Si la ventana del quiz cierra el 18 oct — fecha de la landing — se
+  **infiere** que la revisión se habilita entonces: **sin confirmar**.)
+- **Límites**: igual que V77 — login obligatorio (V12), opción única e interfaz
+  en español; checkbox múltiple, respuesta corta, true/false y Moodle en inglés
+  siguen sin probar.
+
 ## Errores del agente — no repetir
 
 Registro de los fallos reales de esta ronda, escritos en segunda persona como
@@ -1288,6 +1354,27 @@ sintético en lugar de datos/clic reales):
   saltaba un `alert` nativo `Select the correct option.`. **Corrección**:
   `page.mouse.click()` sobre el centro del `getBoundingClientRect()`
   (V64).
+
+**Errores de la ronda 15 (Moodle, V78)** — autorrección:
+
+- **Pulsaste `#next-page` sin comprobar que existiera.** Ese id no está en la
+  plantilla de Moodle del CUN y el clic falló con "does not match any elements".
+  **Corrección**: localizar el control con `browser_find` (o `text=Siguiente
+  página` / `#mod_quiz-next-nav`) antes de asumir un selector.
+- **Interpretaste un `TimeoutError` de 5 s como un clic fallido.** En la Q8 el
+  clic en "Siguiente página" se ejecutó ("click action done") pero el MCP agotó
+  el tiempo esperando la navegación; la página **sí** avanzó. **Corrección**:
+  tras ese timeout, verificar el estado real (URL/título y el `a.qnbutton`
+  `title` del navigator) antes de reintentar o de dar la respuesta por perdida.
+- **Lanzaste una función de `browser_evaluate` con un ternario mal
+  paréntesizado** → `SyntaxError` y una llamada desperdiciada. **Corrección**:
+  funciones anidadas pequeñas; si el error es de sintaxis, reenviar la función
+  limpia en lugar de dudar del estado de la página.
+- **Leíste la pregunta con un `querySelectorAll` ingenuo** y la extracción
+  arrastró radios del modal de mensajes de Moodle
+  (`message_blocknoncontacts`). No afectó a la respuesta (el clic iba por
+  `name`), pero ensució la lectura. **Corrección**: filtrar por `name^="q"`
+  o por `.question`/`#region-main` (V78).
 
 ## Patrones de página catalogados (para la skill)
 
@@ -1367,7 +1454,7 @@ sintético en lugar de datos/clic reales):
 | **Selección de frame con varios frames vivos** | Dexway `page.frames()` | ✅ de derecha a izquierda con `{auto, step}` (V65) |
 | **Sujeto partido en nodo de texto (`He'` + hueco)** | Dexway frases con `to be` | ✅ `childNodes` + normalizar (V66/V67) |
 | **`to be` en forma corta (`is/m/re`)** | Dexway paso 10 | ✅ `I'`→`m`, `you/we/they'`→`re` (V69) |
-| **Moodle `mod/quiz` (paginación configurable + navegación por bloques; 1/página en el ejemplo)** | cdigital.cun.edu.co (CUN) | ✅ **10/10 con puntuación visible** (V77) |
+| **Moodle `mod/quiz` (paginación configurable + navegación por bloques; 1/página en el ejemplo)** | cdigital.cun.edu.co (CUN) | ✅ **10/10 con puntuación visible** (V77) → ✅ **20/20 y 4.75/5.00 (95%) leído del DOM** (V78) |
 
 ## Modos de disparo validados
 
@@ -1386,9 +1473,12 @@ sintético en lugar de datos/clic reales):
 - Modo `semi` sobre una página real **sin autoconfirmación** (el usuario
   confirma cada `question` en su terminal).
 - Pruebas de motores adicionales cuando aparezcan URLs públicas sin login
-  (Google Forms suele exigirlo; ver `docs/urls-recon-r2.txt`). **Moodle ya quedó
-  probado en sesión autenticada** en la ronda 14 (V77): quedan sus variantes de
-  pregunta (checkbox múltiple, respuesta corta, true/false) y el flujo de envío.
+  (Google Forms suele exigirlo; ver `docs/urls-recon-r2.txt`). **Moodle ya dejó
+  resuelto su flujo de envío y puntuación en la ronda 15 (V78)**: quedan sus
+  variantes de pregunta (checkbox múltiple, respuesta corta, true/false), el
+  Moodle en inglés y `review.php` (revisión post-intento — sirve para identificar
+  la pregunta fallada del Parcial 1, pendiente hasta que el quiz habilite
+  "Revisar").
 - Nota: `javatpoint.com`, `recursostic.es`, `html5.laboratoriotec.es` y
   `test-online.es` no resuelven DNS en este entorno (error de red, no del
   agente).
@@ -1413,7 +1503,7 @@ sintético en lugar de datos/clic reales):
   ("Pleased to meet you", "Profession and Nationality", su test), la
   **Unidad 4** completa y el **Final Exam** del Course review, con el mismo
   flujo: `Main menu` → *Save and exit* → índice → fila de unidad → `Iniciar
-  lección` / `Iniciar test`; motores V31-V69 reutilizables (bajar el XML nuevo
+  lección` / `Iniciar test`; motores V31-V76 reutilizables (bajar el XML nuevo
   por par `<id>.xml`, usar el de cifra mayor y emparejar por texto de
   instrucción). El progreso de las lecciones completadas de las Unidades 1-2 es
   de la ronda 8/10 y no se vuelve a repetir.

@@ -17,9 +17,9 @@ Referencias del proyecto:
 
 - `references/patrones-comunes.md` — trampas genéricas de páginas de examen.
 - `references/audio-y-visual.md` — preguntas con imagen/canvas y con audio.
-- `references/dexway.md` — motor Dexway: voz, role-play, tests (V31-V69).
+- `references/dexway.md` — motor Dexway: voz, role-play, tests (V31-V76).
 - `references/articulate-storyline.md` — motor Articulate Storyline (V24-V30).
-- `references/moodle.md` — motor Moodle `mod/quiz` (V77).
+- `references/moodle.md` — motor Moodle `mod/quiz` (V77-V78).
 - `docs/capacidades-playwright.md` — matriz escenario → herramienta, escalera R1-R5.
 - `AGENTS.md` — reglas generales de interacción y límites éticos.
 
@@ -275,7 +275,7 @@ genéricas fallan.
 | --- | --- |
 | Launch LTI `*.dexway.com/lti/enter`, iframes `content-packages`, botones `Repeat` / `Record voice` / `[title="Next"]`, `voicerecog.cae.net` | `references/dexway.md` |
 | `html5/data/js/*.js` con `window.globalProvideData('slide', …)`, `.cs-button`, `slide-object-*`, raíz `#preso`, `window.require` AMD | `references/articulate-storyline.md` |
-| URL `/mod/quiz/attempt.php` o `/mod/quiz/summary.php`, bloque "Navegación por el cuestionario" con enlaces `Pregunta N` / "Esta página" / "Terminar intento...", `group "Pregunta N Respuesta"` (interfaz comprobada en español) | `references/moodle.md` |
+| URL `/mod/quiz/view.php?id=…` con botón "Intento de cuestionario" y diálogo "Comenzar intento", `/mod/quiz/attempt.php` o `/mod/quiz/summary.php`, bloque "Navegación por el cuestionario" con enlaces `Pregunta N` / "Esta página" / "Terminar intento...", `group "Pregunta N Respuesta"` (interfaz comprobada en español) | `references/moodle.md` |
 | `<audio>`/`<source>`, iframes YouTube, botones "Play audio"/"Listen", markers de transcript, `speechSynthesis` | `references/audio-y-visual.md` |
 | Controles por coordenadas, canvas, o preguntas dibujadas como imagen | `references/audio-y-visual.md` |
 | Cualquier otro caso | sigue solo con este archivo + `references/patrones-comunes.md` |

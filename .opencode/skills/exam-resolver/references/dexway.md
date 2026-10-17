@@ -1,6 +1,6 @@
-# Motor Dexway (V31-V69)
+# Motor Dexway (V31-V76)
 
-Hallazgos de las rondas 7-12 (CUN / Dexway: lecciones con pronunciación,
+Hallazgos de las rondas 7-13 (CUN / Dexway: lecciones con pronunciación,
 role-play con IA, tests de unidad). **Cárgalo solo cuando reconozcas el
 motor** (ver tabla "Dispatcher de motores" en `SKILL.md`).
 
@@ -656,7 +656,7 @@ En el showroom el clic JS **sí** vale para las imágenes
 `img.AnimacionFlash2_GreenClue`; lo que no acepta clic sintético es el `Next`
 (V68).
 
-### Motor Dexway — showroom de formas negativas: V70-V75 (ronda 13, Unidad 3)
+### Motor Dexway — showroom de formas negativas: V70-V76 (ronda 13, Unidad 3)
 
 Ronda sobre *Showroom: negative form of "to be"*, ejercicios 7, 8 y 9 +
 Vocabulary practice. Resultado: pasos 17 y 19 y 20 `Passed`, 18 `Failed`
