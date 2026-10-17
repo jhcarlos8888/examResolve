@@ -61,7 +61,7 @@ MCP, npm, scripts, skill y simuladores).
   **solo cuando toca** (tabla "Dispatcher de motores" en la skill).
   `patrones-comunes.md` (trampas genéricas de páginas de examen),
   `audio-y-visual.md` (imágenes/canvas y listening), `dexway.md` (V31-V76: voz,
-  role-play, tests), `articulate-storyline.md` (V24-V30), `moodle.md` (V77-V78:
+  role-play, tests), `articulate-storyline.md` (V24-V30), `moodle.md` (V77-V79:
   motor Moodle `mod/quiz`).
 - `.opencode/command/resolver.md`: comando `/resolver [url] [--semi|--auto]`
   dentro de OpenCode.
@@ -73,8 +73,8 @@ MCP, npm, scripts, skill y simuladores).
   visible, travesía de iframes) y verifica el `Resultado: N/N`. 31 aserciones.
 - `docs/capacidades-playwright.md`: matriz escenario → estrategia (escalera
   R1-R5) de Playwright MCP.
-- `docs/pruebas-reales.md`: registro de pruebas reales — 15 rondas, hallazgos
-  **V1-V78** y la sección "Errores del agente — no repetir" (los contadores de
+- `docs/pruebas-reales.md`: registro de pruebas reales — 16 rondas, hallazgos
+  **V1-V79** y la sección "Errores del agente — no repetir" (los contadores de
   páginas/flujo y de URLs escaneadas viven ahí). **Los scores por sitio viven en
   ese doc, no en este README.**
 - `docs/urls-recon*.txt` + `scripts/recon.mjs`: escáner estructural headless con

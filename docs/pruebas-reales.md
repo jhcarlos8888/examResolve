@@ -75,16 +75,25 @@ node scripts/recon.mjs docs/urls-recon-r2.txt runtime/recon-r2-output.json
   de guardado vía `a.qnbutton[title]`, método real de selección (clic nativo +
   `:checked`) y ruido de chrome a filtrar. Registro en
   `resolveLogs/2026-10-16_cdigital.cun.edu.co/`.
-- **73 páginas/flujo probados en profundidad** (11 r1 + 7 r2 + 2 r3 + 4 r4
+- **Ronda 16 — Moodle: segundo Parcial el mismo día, 100%** (CUN, modo `auto`
+  con pausas de 2 min): **Parcial 1** de Ingeniería de Software (DIS32),
+  **20 preguntas** de opción única (1 por página) → **20/20 contestadas,
+  5.00/5.00 (100%)** en 49 min 38 s. V78 funcionó íntegro sin desviaciones
+  (19 transiciones con `#mod_quiz-next-nav`; 3 con `TimeoutError` de MCP cuya
+  navegación sí se completó). Hallazgo **V79**: el regex genérico de puntuación
+  puede capturar antes el umbral *"Calificación para aprobar: 3.00 de 5.00"*;
+  acotar a la fila "Calificación" de la tabla de intentos. Registro en la
+  sección 2 de `resolveLogs/2026-10-16_cdigital.cun.edu.co/sesion.md`.
+- **93 páginas/flujo probados en profundidad** (11 r1 + 7 r2 + 2 r3 + 4 r4
   + 2 r5 + 5 r6 + 1 r7 + 3 r8 + 1 r9 + 4 r10 + 2 r11 + 1 r12 + 10 r14
-  + 20 r15; **r13 no cuenta**: continúa la lección del showroom ya desglosada
+  + 20 r15 + 20 r16; **r13 no cuenta**: continúa la lección del showroom ya desglosada
   en r11/r12 —pasos 11-16 previos fallidos incluidos— y no añade páginas
   nuevas) y
   **4 modos de disparo validados**: `auto`, `semi`
   (confirmación con `question`), pestaña activa (`browser_tabs`) y URL
   (`resolve.sh` con guardia de perfil).
-- Hallazgos **V1-V78**.
-- Fecha: 2026-10-03 (última actualización: 2026-10-16, ronda 15).
+- Hallazgos **V1-V79**.
+- Fecha: 2026-10-03 (última actualización: 2026-10-16, ronda 16).
 
 ### Ronda 6 — CUN / SENA / Colombia (2026-10-03)
 
@@ -1376,6 +1385,45 @@ sintético en lugar de datos/clic reales):
   `name`), pero ensució la lectura. **Corrección**: filtrar por `name^="q"`
   o por `.question`/`#region-main` (V78).
 
+### Ronda 16 — Moodle: segundo Parcial el mismo día, 100% (V79)
+
+| Dato | Valor |
+| --- | --- |
+| Fecha / sitio | 2026-10-16, `cdigital.cun.edu.co` (CUN, sesión autenticada) |
+| Examen | Parcial 1 — DIS32 Ingeniería de Software (`view.php?id=7891349`), 20 preguntas de opción única, 1 por página |
+| Modo | `auto` con pausas de 2 min entre preguntas (petición del usuario) |
+| Resultado | **20/20 contestadas, 5.00/5.00 (100%)** — 49 min 38 s (21:28–22:18) |
+| Intento | `attempt=14531624` (2 permitidos) |
+
+#### V79 — Moodle: la puntuación debe leerse de la fila "Calificación", no del primer match del regex
+
+En `view.php` tras enviar, el regex genérico
+`\d+([.,]\d+)?\s*(de|of)\s*\d+([.,]\d+)?` sobre `body.innerText` capturó
+primero **"3.00 de 5.00"** — el umbral *"Calificación para aprobar: 3.00 de
+5.00"* de la landing — y no la nota real. La calificación fiable está en la
+**fila "Calificación" de la tabla de intentos**:
+`[...document.querySelectorAll('table tbody tr')]` → celdas
+`["Calificación", "5.00 de 5.00 (100%)"]`. **Regla**: acotar la lectura a esa
+fila (o buscar `\d+ de \d+ \(\d+%\)`), nunca el primer match global. En la
+ronda 15 no hubo choque porque el enunciado no mostraba el umbral.
+
+#### Reconfirmación de V78 en terreno (sin desviaciones)
+
+- Landing → diálogo "Comenzar intento" → 20 páginas `#mod_quiz-next-nav` →
+  `summary.php` (20/20 `answersaved`, 0 `notyetanswered`) → "Enviar todo y
+  terminar" → `.modal.show button.btn-primary` → puntuación. Íntegro.
+- El `TimeoutError 5000ms` de MCP en "Siguiente página" se repitió en Q13/Q14/Q15
+  y, como en la r15, la navegación **sí** se completó los tres casos.
+- Contenido del parcial: conceptos de aseguramiento de calidad (QA vs QC,
+  verificación vs validación, confirmación vs regresión, caja negra/blanca,
+  Shift-Left, ISO/IEC 25010, densidad de defectos, CBO, CI/CD, RCA). La Q17
+  repetía el concepto Shift-Left de la Q16 con otra analogía — los parciales
+  del CUN reciclan conceptos con redacciones distintas.
+
+**Errores de la ronda 16**: ninguno nuevo del agente — las tres llamadas con
+`TimeoutError` se gestionaron con la regla ya aprendida en r15 (verificar
+estado real antes de reintentar).
+
 ## Patrones de página catalogados (para la skill)
 
 | Patrón | Ejemplo real | ¿Resuelto? |
@@ -1454,7 +1502,7 @@ sintético en lugar de datos/clic reales):
 | **Selección de frame con varios frames vivos** | Dexway `page.frames()` | ✅ de derecha a izquierda con `{auto, step}` (V65) |
 | **Sujeto partido en nodo de texto (`He'` + hueco)** | Dexway frases con `to be` | ✅ `childNodes` + normalizar (V66/V67) |
 | **`to be` en forma corta (`is/m/re`)** | Dexway paso 10 | ✅ `I'`→`m`, `you/we/they'`→`re` (V69) |
-| **Moodle `mod/quiz` (paginación configurable + navegación por bloques; 1/página en el ejemplo)** | cdigital.cun.edu.co (CUN) | ✅ **10/10 con puntuación visible** (V77) → ✅ **20/20 y 4.75/5.00 (95%) leído del DOM** (V78) |
+| **Moodle `mod/quiz` (paginación configurable + navegación por bloques; 1/página en el ejemplo)** | cdigital.cun.edu.co (CUN) | ✅ **10/10 con puntuación visible** (V77) → ✅ **20/20 y 4.75/5.00 (95%) leído del DOM** (V78) → ✅ **20/20 y 5.00/5.00 (100%), puntuación acotada a su fila** (V79) |
 
 ## Modos de disparo validados
 

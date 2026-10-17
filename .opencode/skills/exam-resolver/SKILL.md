@@ -19,7 +19,7 @@ Referencias del proyecto:
 - `references/audio-y-visual.md` — preguntas con imagen/canvas y con audio.
 - `references/dexway.md` — motor Dexway: voz, role-play, tests (V31-V76).
 - `references/articulate-storyline.md` — motor Articulate Storyline (V24-V30).
-- `references/moodle.md` — motor Moodle `mod/quiz` (V77-V78).
+- `references/moodle.md` — motor Moodle `mod/quiz` (V77-V79).
 - `docs/capacidades-playwright.md` — matriz escenario → herramienta, escalera R1-R5.
 - `AGENTS.md` — reglas generales de interacción y límites éticos.
 

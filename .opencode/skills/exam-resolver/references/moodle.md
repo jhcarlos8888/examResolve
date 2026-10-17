@@ -1,7 +1,7 @@
 # Motor Moodle — `mod/quiz`
 
-Evidencia: **Rondas 14 y 15**, `cdigital.cun.edu.co` (CUN), sesiones autenticadas
-2026-10-15 y 2026-10-16 (V77 y V78 en `docs/pruebas-reales.md`).
+Evidencia: **Rondas 14, 15 y 16**, `cdigital.cun.edu.co` (CUN), sesiones autenticadas
+2026-10-15 y 2026-10-16 (V77, V78 y V79 en `docs/pruebas-reales.md`).
 Volcados/sesión: `resolveLogs/2026-10-15_cdigital.cun.edu.co/` y
 `resolveLogs/2026-10-16_cdigital.cun.edu.co/`.
 
@@ -28,13 +28,13 @@ Volcados/sesión: `resolveLogs/2026-10-15_cdigital.cun.edu.co/` y
 | --- | --- |
 | Landing | `view.php?id=<cmid>`: datos del quiz (intentos permitidos, tiempo límite, nota de aprobación) + botón **"Intento de cuestionario"** → **diálogo** "Comenzar intento" con aviso de tiempo límite → botón "Comenzar intento" del diálogo **inicia el cronómetro**. |
 | Paginación | **1 pregunta por página** en ambas rondas (r15 confirmó `page=0…N`; en r14 el `page=0` inicial no quedó volcado). **En Moodle las preguntas por página las configura el profesor**: cuenta los `group "…Respuesta"` antes de asumir paginación. |
-| Avance inferior | Botón `#mod_quiz-next-nav` (input submit) con texto **"Siguiente página"**; en la **última página** ese mismo botón cambia a **"Terminar intento..."** y envía el formulario `#responseform` (`action=…/processattempt.php`). El selector `#next-page` **no existe** en esta plantilla: usar `text=Siguiente página` o `#mod_quiz-next-nav`. |
+| Avance inferior | Botón `#mod_quiz-next-nav` (input submit) con texto **"Siguiente página"**; en la **última página** ese mismo botón cambia a **"Terminar intento..."** y envía el formulario `#responseform` (`action=…/processattempt.php`). El selector `#next-page` **no existe** en esta plantilla: usar `text=Siguiente página` o `#mod_quiz-next-nav`. **R16 reconfirmado**: `#mod_quiz-next-nav` funcionó en las 19 transiciones; en varias la navegación **sí se completó** pese al `TimeoutError 5000ms` de MCP — verificar título/URL (o el `qnbutton`) antes de reintentar. |
 | Navegación lateral | Bloque `Pregunta N`… + **"Terminar intento..."** → `summary.php`. |
 | Respuesta única | Radios nativos `input[name="q<id>:<page>_answer"][value="X"]` + label con la opción. Clic nativo sobre el input funciona (sin AJAX extra); verificar con `input[name="…"]:checked` (V57). En la **ronda 15** consta que radio y checkbox de chrome de Moodle conviven en la página (ver "Ruido a filtrar"); la r14 no volcó radios. |
 | Guardado | Tras marcar y navegar, los `a.qnbutton` del navigator llevan el estado real del servidor en el `title`: **"Pregunta N - Respuesta guardada"** / **"Sin responder aún"** y clase `answersaved`/`notyetanswered`. Es la mejor verificación previa al envío; el texto "Sin responder aún" del área de la pregunta **solo se actualiza al recargar/navegar**. |
 | Marcar para revisar | `button "Marcadas"` con texto visible **"Marcar pregunta"**. No interfiere con la respuesta. |
 | Fin del intento | Última página → **"Terminar intento..."** → `summary.php` (tabla: "N Respuesta guardada" por fila) → botón `#single_button*` **"Enviar todo y terminar"** → **diálogo** `[role=dialog]` "¿Entregar todas sus respuestas y terminar?" → confirmar con el botón `btn-primary` del modal (**sin `id`**; selector fiable `.modal.show button.btn-primary`). Confirmado de nuevo vuelve a `view.php`. |
-| Puntuación | En `view.php`, fila de la tabla de intentos: texto **`Calificación 4.75 de 5.00 (95%)`** → regex `\d+([.,]\d+)?\s*(de|of)\s*\d+([.,]\d+)?`. La revisión individual (qué pregunta falló) **no estuvo disponible** tras enviar (sin enlace "Revisar"); si la ventana cierra el 18 oct (fecha de la landing) se **infieren** que entonces se habilita — **sin confirmar**. |
+| Puntuación | En `view.php`, fila de la tabla de intentos: texto **`Calificación 5.00 de 5.00 (100%)`** (r16) / `4.75 de 5.00 (95%)` (r15) → regex `\d+([.,]\d+)?\s*(de|of)\s*\d+([.,]\d+)?` (**V79**: acotarlo a la fila "Calificación" de la tabla de intentos — `table tbody tr` con celdas `["Calificación", …]` — porque el regex sobre `body.innerText` puede capturar antes el umbral *"Calificación para aprobar: 3.00 de 5.00"*; visto en r16). La revisión individual (qué pregunta falló) **no estuvo disponible** tras enviar (sin enlace "Revisar"); si la ventana cierra el 18 oct (fecha de la landing) se **infieren** que entonces se habilita — **sin confirmar**. |
 
 ## Ruido a filtrar en el DOM (ronda 15)
 
