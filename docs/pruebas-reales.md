@@ -105,16 +105,28 @@ node scripts/recon.mjs docs/urls-recon-r2.txt runtime/recon-r2-output.json
   directa conserva las respuestas guardadas). **HTTP 500 en el envío repetido**
   (2ª vez seguida). Las 2 preguntas falladas (Q8 tipos de licencia, Q26 TCP/IP)
   quedan documentadas con su clave inferida.
-- **133 páginas/flujo probados en profundidad** (11 r1 + 7 r2 + 2 r3 + 4 r4
+- **Ronda 19 — Moodle CUN Quiz 2 (grupo DIS32), 100% con esperas de 2 min**
+  (modo `auto` con pausas de 2 min entre preguntas por petición del usuario,
+  límite 45 min): **10 preguntas de opción única, 1 por página** → **10/10,
+  5.00/5.00 (100%)** en 23 min 50 s. Muro de login resuelto con login manual
+  del usuario (V12). Hallazgos **V82-V84**. Registro en
+  `resolveLogs/2026-10-20_cdigital.cun.edu.co/sesion.md`.
+- **Ronda 20 — Moodle CUN Quiz 2 (grupo DIS33), 100% con 2 preguntas por
+  página** (misma fecha, `auto` con **2 min de separación real entre
+  pregunta y pregunta** — aclaración del usuario en caliente): **10 preguntas,
+  2 por página (5 páginas)** → **10/10, 5.00/5.00 (100%)** en 28 min 8 s.
+  Resuelve el "por confirmar 2" de `moodle.md` (varias preguntas por página).
+  Registro en la sección 2 del mismo `sesion.md`.
+- **153 páginas/flujo probados en profundidad** (11 r1 + 7 r2 + 2 r3 + 4 r4
   + 2 r5 + 5 r6 + 1 r7 + 3 r8 + 1 r9 + 4 r10 + 2 r11 + 1 r12 + 10 r14
-  + 20 r15 + 20 r16 + 10 r17 + 30 r18; **r13 no cuenta**: continúa la lección del showroom ya desglosada
+  + 20 r15 + 20 r16 + 10 r17 + 30 r18 + 10 r19 + 10 r20; **r13 no cuenta**: continúa la lección del showroom ya desglosada
   en r11/r12 —pasos 11-16 previos fallidos incluidos— y no añade páginas
   nuevas) y
   **4 modos de disparo validados**: `auto`, `semi`
   (confirmación con `question`), pestaña activa (`browser_tabs`) y URL
   (`resolve.sh` con guardia de perfil).
-- Hallazgos **V1-V81**.
-- Fecha: 2026-10-03 (última actualización: 2026-10-16, ronda 18).
+- Hallazgos **V1-V84**.
+- Fecha: 2026-10-03 (última actualización: 2026-10-20, rondas 19-20).
 
 ### Ronda 6 — CUN / SENA / Colombia (2026-10-03)
 
@@ -1553,6 +1565,76 @@ reglas existentes (verificar estado real, no reenviar). La pérdida de 2
 preguntas (Q8, Q26) se debió a que **el review del intento previo solo da
 veredicto, no la clave** cuando ambas opciones candidatas siguen sin probar.
 
+### Rondas 19 y 20 — Moodle CUN: dos Quiz 2 el mismo día, ambos 100% (V82-V84)
+
+| Dato | Ronda 19 | Ronda 20 |
+| --- | --- | --- |
+| Fecha / sitio | 2026-10-20, `cdigital.cun.edu.co` (CUN) | 2026-10-20, `cdigital.cun.edu.co` (CUN) |
+| Examen | Quiz 2, DIS32/55540 (`view.php?id=7891354`) | Quiz 2, DIS33/55560 (`view.php?id=7941967`) |
+| Estructura | 10 preguntas de opción única, **1 por página** | 10 preguntas de opción única, **2 por página (5 páginas)** |
+| Modo | `auto` + pausas de 2 min entre preguntas (límite 45 min) | `auto` + **2 min de separación real entre pregunta y pregunta** (límite 45 min) |
+| Resultado | **10/10, 5.00/5.00 (100%)** en 23 min 50 s | **10/10, 5.00/5.00 (100%)** en 28 min 8 s |
+| Intento | `attempt=14662425` | `attempt=14663144` |
+
+#### V82 — El auto-save de Moodle (`autosave.ajax.php`) se pierde si se recarga antes de su ventana
+
+Al responder la última pregunta de una página y recargar/navegar muy poco
+después, la respuesta **quedaba marcada en el formulario pero no persistida**
+(`value=-1` al volver a cargar, `a.qnbutton[title] = "Sin responder aún"`).
+Pasó 3 veces seguidas con la misma pregunta (P10). Diagnóstico por red:
+
+- El guardado es **asíncrono** (`POST /mod/quiz/autosave.ajax.php → 200
+  {"status":"OK","timeleft":N}`), no ocurre en el propio clic; una recarga
+  posterior lanza `beforeunload` y **aborta** el POST pendiente.
+- **Regla**: tras marcar, (1) esperar a ver el `autosave.ajax.php` con
+  `{"status":"OK"}` en `browser_network_requests`, o (2) como mínimo **no
+  recargar ni navegar en los primeros segundos**; la verificación definitiva es
+  **recargar y leer `:checked` + `a.qnbutton[title]`** — el estado visible en
+  el formulario NO prueba persistencia (V59 aplicado a Moodle).
+- Seis días antes (r14-r18, V77-V81) no apareció: ahí se esperaban pausas de
+  120 s entre preguntas y nunca se recargó poco después de un clic.
+
+#### V83 — 404 transitorio en `processattempt.php?cmid=…` al navegar de página
+
+Al pulsar "Siguiente página" desde la página 2: `TimeoutError 5000ms` de MCP
++ la navegación cayó en `processattempt.php?cmid=7941967` (sin `attempt`) con
+**HTTP 404 "Error | cdigital"**. Misma familia que el HTTP 500 de SENA (V80):
+
+- **No reenviar a ciegas**: recuperar por **URL directa**
+  `attempt.php?attempt=…&cmid=…&page=N` y verificar con los títulos de
+  `a.qnbutton` que las respuestas anteriores siguen "Respuesta guardada"
+  (P1-P4 intactas).
+- Causa probable compartida: el form POST de navegación llega incompleto
+  (falta `attempt`) cuando el timeout del cliente lo interrumpe.
+- Añade una variante a la matriz de cierres de Moodle: 404 (CUN) ≡ 500 (SENA)
+  ≡ TimeoutError sin cambio de URL — todos con la misma respuesta: verificar
+  estado y recuperar por URL.
+
+#### V84 — Varios `:checked` por página: radio oculto `value=-1` + 2 preguntas/página
+
+Con **más de una pregunta por página** (nueva estructura vista por primera vez
+en CUN: 2 por página), al verificar `#responseform input[type=radio]:checked`
+aparecen **varios radios a la vez**:
+
+- Cada pregunta **sin responder** expone un radio oculto (aria-hidden) con
+  `value="-1"` del mismo `name`; filtrar por `value !== '-1'` o leer por
+  nombre `q<id>:<page>_answer` concreto.
+- Tras verificar P1, el checked de P2 es `value=-1` → es la señal de "pendiente",
+  no un error.
+- **Cierra el punto "por confirmar 2" de `moodle.md`**: Moodle admite varias
+  preguntas por página (2/página confirmado; el límite lo pone el profesor),
+  el bloque "Navegación por el cuestionario" y `#mod_quiz-next-nav` funcionan
+  igual, y el resumen `summary.php` lista fila por fila "N — Respuesta
+  guardada" (comprobación previa al envío sin tocar el navegador lateral).
+
+**Errores de las rondas 19-20 (nuevo y a no repetir)**: el agente recargó la
+página inmediatamente tras marcar P10 **sin esperar el auto-save**, tres
+veces, confiando en el `:checked` del formulario (señal, no verificación —
+V59). Se detectó porque el resumen mostraba "Sin responder aún" y se corrigió
+esperando el POST `autosave.ajax.php → {"status":"OK"}` y revalidando por
+recarga. La pausa de 2 min por pregunta (r19) enmascaraba el problema: la
+ventana de auto-save quedaba siempre cubierta.
+
 ## Patrones de página catalogados (para la skill)
 
 | Patrón | Ejemplo real | ¿Resuelto? |
@@ -1631,7 +1713,7 @@ veredicto, no la clave** cuando ambas opciones candidatas siguen sin probar.
 | **Selección de frame con varios frames vivos** | Dexway `page.frames()` | ✅ de derecha a izquierda con `{auto, step}` (V65) |
 | **Sujeto partido en nodo de texto (`He'` + hueco)** | Dexway frases con `to be` | ✅ `childNodes` + normalizar (V66/V67) |
 | **`to be` en forma corta (`is/m/re`)** | Dexway paso 10 | ✅ `I'`→`m`, `you/we/they'`→`re` (V69) |
-| **Moodle `mod/quiz` (paginación configurable + navegación por bloques; 1/página en el ejemplo)** | cdigital.cun.edu.co (CUN), zajuna.sena.edu.co (SENA) | ✅ **10/10 con puntuación visible** (V77) → ✅ **20/20 y 4.75/5.00 (95%) leído del DOM** (V78) → ✅ **20/20 y 5.00/5.00 (100%), puntuación acotada a su fila** (V79) → ✅ **10/10 y 100.00/100.00 en tema YUI con checkbox y review.php** (V80) → ✅ **reintento 30/30 y 93.00/100.00 apoyado en el review del intento previo** (V81) |
+| **Moodle `mod/quiz` (paginación configurable: 1/página y 2/página confirmados; navegación por bloques)** | cdigital.cun.edu.co (CUN), zajuna.sena.edu.co (SENA) | ✅ **10/10 con puntuación visible** (V77) → ✅ **20/20 y 4.75/5.00 (95%) leído del DOM** (V78) → ✅ **20/20 y 5.00/5.00 (100%), puntuación acotada a su fila** (V79) → ✅ **10/10 y 100.00/100.00 en tema YUI con checkbox y review.php** (V80) → ✅ **reintento 30/30 y 93.00/100.00 apoyado en el review del intento previo** (V81) → ✅ **10/10 y 5.00/5.00 ×2 con esperas de 2 min, auto-save vigilado y 404 de processattempt recuperado** (V82-V84) |
 
 ## Modos de disparo validados
 
@@ -1650,12 +1732,13 @@ veredicto, no la clave** cuando ambas opciones candidatas siguen sin probar.
 - Modo `semi` sobre una página real **sin autoconfirmación** (el usuario
   confirma cada `question` en su terminal).
 - Pruebas de motores adicionales cuando aparezcan URLs públicas sin login
-  (Google Forms suele exigirlo; ver `docs/urls-recon-r2.txt`). **Moodle ya dejó
-  resuelto su flujo de envío y puntuación en la ronda 15 (V78)**: quedan sus
-  variantes de pregunta (checkbox múltiple, respuesta corta, true/false), el
-  Moodle en inglés y `review.php` (revisión post-intento — sirve para identificar
-  la pregunta fallada del Parcial 1, pendiente hasta que el quiz habilite
-  "Revisar").
+  (Google Forms suele exigirlo; ver `docs/urls-recon-r2.txt`). **Moodle dejó
+  resuelto su flujo de envío y puntuación en la ronda 15 (V78), el checkbox en
+  la r17 (V80), `review.php` en la r17/r18 (V80/V81) y las varias preguntas por
+  página en la r20 (V84)**: quedan sus variantes de pregunta **respuesta
+  corta** (`<input>`/`<textarea>`) y **verdadero/falso**, y el Moodle en
+  inglés. En CUN sigue sin aparecer el enlace "Revisión" tras enviar (r19/r20
+  reconfirmado).
 - Nota: `javatpoint.com`, `recursostic.es`, `html5.laboratoriotec.es` y
   `test-online.es` no resuelven DNS en este entorno (error de red, no del
   agente).
