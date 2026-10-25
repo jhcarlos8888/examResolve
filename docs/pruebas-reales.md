@@ -125,8 +125,18 @@ node scripts/recon.mjs docs/urls-recon-r2.txt runtime/recon-r2-output.json
   **4 modos de disparo validados**: `auto`, `semi`
   (confirmación con `question`), pestaña activa (`browser_tabs`) y URL
   (`resolve.sh` con guardia de perfil).
-- Hallazgos **V1-V84**.
-- Fecha: 2026-10-03 (última actualización: 2026-10-20, rondas 19-20).
+- **Ronda 21 — Clevry / Santander Open Academy, Personality Questionnaire 78/78**
+  (2026-10-25, `auto`): URL pública = landing sin examen → login SSO manual
+  del usuario (V12) → plataforma Clevry. **78 afirmaciones Likert (13 páginas
+  de 6)** respondidas con verificación 6/6 por página, coherencia en las 21
+  afirmaciones repetidas (test de consistencia) y consentimiento/honestidad
+  confirmado por el usuario antes de "Submit Responses". Estado final
+  **"completed on 25/10/2026 — Complete"** (sin puntuación visible: feedback
+  por email). Hallazgo **V85** (radios iCheck: solo `label.click()` marca;
+  `radio.click()` no). Registro en
+  `resolveLogs/2026-10-25_sb-es.clevry.com/sesion.md`.
+- Hallazgos **V1-V85**.
+- Fecha: 2026-10-03 (última actualización: 2026-10-25, ronda 21).
 
 ### Ronda 6 — CUN / SENA / Colombia (2026-10-03)
 
@@ -1634,6 +1644,37 @@ V59). Se detectó porque el resumen mostraba "Sin responder aún" y se corrigió
 esperando el POST `autosave.ajax.php → {"status":"OK"}` y revalidando por
 recarga. La pausa de 2 min por pregunta (r19) enmascaraba el problema: la
 ventana de auto-save quedaba siempre cubierta.
+
+### Ronda 21 — Clevry (Santander): Personality Questionnaire 78/78 con consentimiento (V85)
+
+- Plataforma **Clevry** (`sb.clevry.com` / `sb-es.clevry.com`, ASP.NET WebForms
+  con `__doPostBack`), portal Santander Open Academy. URL pública
+  `app.santanderopenacademy.com/es/program/...` es solo una landing: el examen
+  está detrás del login SSO (Keycloak) → login manual del usuario (V12).
+- 78 afirmaciones Likert de 5 opciones en 13 páginas de 6; el "botón"
+  continuar es un `a[href*="__doPostBack"]`, no un `<button>`.
+- Verificación 6/6 por página con V57 antes de cada "Siguiente"; 13/13 páginas.
+- Declaración/honestidad + consentimiento de datos al final: se **pregunta al
+  usuario** aunque el modo sea `--auto` (no se asumen declaraciones legales).
+
+#### V85 — Radios iCheck: `radio.click()` no marca; solo funciona el clic en el `label`
+
+Los radios de Clevry están envueltos por el plugin **jQuery iCheck**
+(`<div class="iradio_square"><input type=radio style="opacity:0"><ins
+class="iCheck-helper">`):
+
+- `radio.click()` devuelve sin error, pero el radio **queda sin marcar**
+  (`:checked` vacío) — verificar siempre tras el clic (V57 salva aquí).
+- **Funciona**: `document.querySelector('label[for="…"]').click()`
+  (el helper de iCheck también maneja el label nativo).
+- La plataforma usa **afirmaciones repetidas** entre páginas (test de
+  consistencia interna): responder **idéntico** a la primera aparición.
+- Al terminar: `Candidate/AssessmentSubmit.aspx` con casilla de
+  consentimiento/honestidad + "Submit Responses"; el envío redirige a
+  `Candidate/Assessments.aspx` donde la actividad aparece **"completed on
+  <fecha> — Complete"** (estado, sin puntuación: el feedback va por email).
+
+| **Personality Questionnaire Likert 78 af. (iCheck + WebForms)** | sb-es.clevry.com (Santander) | ✅ **78/78 con consistencia + consentimiento del usuario** (V85) |
 
 ## Patrones de página catalogados (para la skill)
 
