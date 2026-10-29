@@ -124,4 +124,23 @@ generales: los que más cuestan"). Este archivo tiene el detalle completo.
   página, `Attention Required | Cloudflare`, o modales de challenge → **R5**.
 - **Errores del sitio solo si bloquean el examen**: si `browser_network_requests`
   muestra fallos en la API del propio quiz, ahí sí investiga (caps `network`).
+- **Sandbox de `execute`: sin timers** (hallado en Moodle r22): `setTimeout` /
+  `setInterval` no existen dentro de `{ code }` → `ReferenceError: Unknown
+  identifier 'setTimeout'`. **Corrección**: nunca esperes con timers dentro de
+  `execute`; si hace falta esperar, usa `shell` con `sleep <n>` entre llamadas,
+  o salta la espera leyendo el estado real con `browser_evaluate`.
+- **Un `execute` que falla a mitad no revierte el clic ya hecho** (hallado en
+  Moodle r22): el bloque clickeó "Siguiente página" y **después** revienta por
+  el `setTimeout`; la página sí navegó. Al reintentar con el mismo `ref` salió
+  `Ref f6e450 not found` y, al volver a clicar con un selector estable, ese
+  botón ya era "Terminar intento…" en la página 2 → intento casi vacío en
+  `summary.php`. **Corrección (V86)**: tras cualquier `execute` fallido que
+  contuviera un clic, **primero lee `location.href`** y compáralo con la URL
+  esperada antes de reintentar. Regla general: **un error de herramienta no
+  prueba que la acción no ocurriera** — prueba el estado del DOM/URL, no la
+  salida de la llamada.
+- **`ref` del snapshot solo valen para ese snapshot**: caducan en cuanto la
+  página navega (ver V86). En bucles o acciones repetidas usa selectores
+  estables (`#mod_quiz-next-nav`, `text=…`) en vez de `ref`; resérvalos para un
+  clic único sobre algo recién snapshoteado.
 

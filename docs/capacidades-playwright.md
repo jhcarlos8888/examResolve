@@ -55,6 +55,40 @@ R5  reportar bloqueo            → detenerse; nunca evadir protecciones
 > coordenadas sin mirar, y R5 con propuesta de cambiar a un modelo
 > multimodal para preguntas puramente visuales.
 
+## Entorno de ejecución: el sandbox de `execute`
+
+Las tools del MCP se invocan **dentro de `{ code }`** de la tool `execute`.
+Ese sandbox es restringido y esto manda sobre cualquier ganas de esperar:
+
+- **NO hay timers**: `setTimeout`, `setInterval`, `queueMicrotask` no existen →
+  `ReferenceError: Unknown identifier 'setTimeout'`. **No escribas esperas con
+  timers**; si necesitas esperar, usa `shell` con `sleep <n>` entre llamadas, o
+  no esperes y lee el estado real.
+- **NO hay `import`, ni acceso a filesystem, ni `Date` con timers.** Todo el
+  I/O externo pasa por `tools.*`.
+- Una llamada que falla a mitad **no revierte lo ya ejecutado**: si el bloque
+  hizo un `click` y después revienta, **el clic sí ocurrió** (ver V86). La
+  excepción corta el resto del bloque, no el efecto ya aplicado.
+
+## `ref` del snapshot: caducan con cada navegación
+
+Los `ref` (`f6e450`, `f10e133`, …) son identificadores del **árbol de
+accesibilidad de un snapshot concreto**. Sirven solo mientras la página no
+navegue:
+
+- Tras cualquier navegación (clic de avance, `browser_navigate`, reload, o un
+  clic que "falló" pero sí navegó), los `ref` previos quedan **obsoletos**:
+  `Error: Ref f6e450 not found in the current page snapshot`.
+- **Antes de reintentar, lee `location.href`** con `browser_evaluate` y
+  compáralo con la URL que esperabas. Un clic que devolvió error **puede haber
+  navegado igualmente** (patrón R16/V83): reintentar a ciegas sobre un `ref`
+  viejo dispara un **segundo clic sobre la página ya avanzada**, donde ese
+  mismo botón puede significar otra cosa ("Terminar intento…").
+- **Prefiere selectores estables** a `ref` cuando vayas a repetir la acción en
+  un bucle: `#mod_quiz-next-nav`, `text=Siguiente página`, o un selector CSS
+  único. El `ref` es cómodo para un clic único sobre un elemento que acabas de
+  snapshotear, no para flujos multi-paso.
+
 ## Matriz escenario → estrategia
 
 | Escenario | Estrategia | Herramientas concretas |
@@ -69,6 +103,7 @@ R5  reportar bloqueo            → detenerse; nunca evadir protecciones
 | Dropdown / select | R1 | `browser_select_option`; fallback R3 con `el.value=...` + `input`/`change` |
 | Verificación de la respuesta | testing | `browser_verify_value` / `browser_verify_element_visible`; o `browser_evaluate` leyendo `:checked` |
 | El botón "Siguiente" no responde / llamada API falla | diagnóstico | `browser_network_requests` + `browser_console_messages` |
+| **Clic devuelve `TimeoutError` o `Ref … not found`** | diagnóstico | **No reintentar a ciegas**: leer `location.href` primero (el clic navegó); un `ref` ya no sirve tras navegar → selector estable |
 | Se pierde la sesión del examen | storage + perfil | El perfil `runtime/brave-profile/` ya persiste cookies; `browser_cookie_list/set` para inspección/reparación |
 | Ventana de diálogo/alert del sitio | R1 | `browser_handle_dialog` |
 | **Preguntas con audio / listening** | R3 → R5 | Buscar transcript (toggle "Show transcript", `[class*=transcript]`, `<track>`, `data-transcript`); si es TTS, envolver `speechSynthesis.speak` antes de reproducir para capturar el texto; sin transcript → **R5** (nunca adivinar) |

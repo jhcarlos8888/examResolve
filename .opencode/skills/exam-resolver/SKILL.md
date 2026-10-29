@@ -21,6 +21,7 @@ Referencias del proyecto:
 - `references/articulate-storyline.md` — motor Articulate Storyline (V24-V30).
 - `references/moodle.md` — motor Moodle `mod/quiz` (V77-V81).
 - `references/clevry.md` — motor Clevry / Santander Open Academy (V85).
+- `references/netacad.md` — motor NetAcad / Cisco Skills for All (V89).
 - `docs/capacidades-playwright.md` — matriz escenario → herramienta, escalera R1-R5.
 - `AGENTS.md` — reglas generales de interacción y límites éticos.
 
@@ -96,6 +97,27 @@ En `semi`, el formato de cada confirmación es:
 
 Si el usuario cambia de respuesta en la confirmación, aplica el cambio y
 continúa. Nunca avances sin confirmación en modo `semi`.
+
+### Ritmo: `--auto` NO es "velocidad máxima" (V88)
+
+**`--auto` = "sin confirmar cada respuesta", no "lo más rápido posible".**
+Si el usuario pide un ritmo — *"2 minutos entre preguntas"*, *"espera"*,
+*"párate en cada una"* — **se respeta aunque el modo sea `--auto`**. Pedido
+explícito de ritmo **manda sobre la eficiencia del agente**; un examen
+terminado en 5 minutos cuando pidieron pausas es un fallo, no un acierto.
+
+Cómo pausar sin timers (`execute` no tiene `setTimeout`, V86):
+
+```text
+marcar → verificar (:checked) → shell `sleep 120` → siguiente pregunta
+```
+
+- Pausa **entre** preguntas, no solo entre páginas (si hay 2/página, dormir
+  tras cada una).
+- Comprueba que la pausa total cabe en el límite de tiempo del quiz antes de
+  empezar: `N` preguntas × pausa ≤ tiempo límite.
+- En `semi`, la pausa del usuario **no sustituye** la confirmación con
+  `question`: van los dos.
 
 ## Paso 1 — Detección: ¿esta página tiene un examen?
 
@@ -281,6 +303,7 @@ genéricas fallan.
 | `html5/data/js/*.js` con `window.globalProvideData('slide', …)`, `.cs-button`, `slide-object-*`, raíz `#preso`, `window.require` AMD | `references/articulate-storyline.md` |
 | URL `/mod/quiz/view.php?id=…` con botón "Intento de cuestionario" y diálogo "Comenzar intento", `/mod/quiz/attempt.php` o `/mod/quiz/summary.php`, bloque "Navegación por el cuestionario" con enlaces `Pregunta N` / "Esta página" / "Terminar intento...", `group "Pregunta N Respuesta"` (interfaz comprobada en español) | `references/moodle.md` |
 | URL `sb.clevry.com` / `sb-es.clevry.com` `/Candidate/*.aspx`, `__doPostBack` de ASP.NET, radios iCheck (`iradio_square` / `iCheck-helper`), "Submit Responses", "Iniciar cuestionario" | `references/clevry.md` |
+| `www.netacad.com/launch?id=…&tab=curriculum`, Course Outline con `[role=treeitem]`, pestañas `a#Launch-tab-gradebook`, iframe `authoring-resources/index.html?xAPILaunchKey=…`, actividad xAPI `cisco_i2mai_final-exam`, botones "Iniciar" / "Enviar página" / "Enviar todo y terminar", checkbox `#confirm-exam`, insignia Credly | `references/netacad.md` |
 | `<audio>`/`<source>`, iframes YouTube, botones "Play audio"/"Listen", markers de transcript, `speechSynthesis` | `references/audio-y-visual.md` |
 | Controles por coordenadas, canvas, o preguntas dibujadas como imagen | `references/audio-y-visual.md` |
 | Cualquier otro caso | sigue solo con este archivo + `references/patrones-comunes.md` |
@@ -294,6 +317,15 @@ R1 browser_snapshot → R2 browser_find → R3 browser_evaluate / run_code_unsaf
 
 Sube un escalón solo si el anterior falla. R4 solo existe si eres multimodal
 (comprobación previa). Detalle completo en `docs/capacidades-playwright.md`.
+
+### Dos reglas de herramienta que evitan cagarla (V86)
+
+1. **Dentro de `{ code }` no hay timers**: `setTimeout`/`setInterval` no
+   existen → `ReferenceError`. Si necesitas esperar, usa `shell` con `sleep`.
+2. **Un `execute` fallido no deshace el clic que ya hizo.** Un error de
+   herramienta **no prueba que la acción no ocurriera**: antes de reintentar,
+   lee `location.href` y el estado real del DOM. Los `ref` de un snapshot
+   **caducan al navegar** — en acciones repetidas usa selectores estables.
 
 ## Condiciones de parada
 
