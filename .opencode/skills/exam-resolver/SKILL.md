@@ -158,6 +158,21 @@ no hay examen y no generas volcados, no crees la carpeta.
 
 ## Paso 2 — Lectura completa de la pregunta
 
+**PROHIBICIÓN UNIVERSAL: se contesta EN TIEMPO REAL y en orden, en CUALQUIER
+plataforma** (Moodle, NetAcad, Zajuna, Clevry, Dexway, Storyline…). Nunca
+hagas una pasada previa por todas las preguntas y luego volver a responder:
+
+- **Aunque la plataforma permita retroceder, no se hace.** Donde no lo
+  permite (Zajuna, navegación restringida, expiración) el resultado puede ser
+  un intento **roto sin forma de recuperarlo**.
+- Cada salto por URL arriesga **perder respuestas sin guardar** (V82), dispara
+  `beforeunload` (V87) y **consume el tiempo límite** (en Zajuna esa lectura
+  previa se llevó ~10 de 20 minutos).
+- Ciclo pregunta a pregunta: **leer → procesar → responder → verificar →
+  avanzar**; después, la siguiente. **Nunca "leo todo primero".** Antes de
+  empezar solo se mira la **landing** (límite, método, N de preguntas — este
+  en el navegador lateral, **sin abrir ninguna página**).
+
 Para cada pregunta:
 
 1. Localiza el **enunciado** (heading o párrafo numerado).

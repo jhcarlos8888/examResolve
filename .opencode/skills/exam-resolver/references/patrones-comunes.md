@@ -124,6 +124,26 @@ generales: los que más cuestan"). Este archivo tiene el detalle completo.
   página, `Attention Required | Cloudflare`, o modales de challenge → **R5**.
 - **Errores del sitio solo si bloquean el examen**: si `browser_network_requests`
   muestra fallos en la API del propio quiz, ahí sí investiga (caps `network`).
+- **PROHIBICIÓN UNIVERSAL: nunca hagas una pasada previa por todas las
+  preguntas en NINGUNA plataforma** (hallado en Zajuna r27): el error fue
+  recorrer las 10 páginas leyéndolas todas y luego **volverse atrás** a
+  responder. **No se hace en ningún sitio**, ni siquiera donde la plataforma
+  permita retroceder:
+  1. **Hay plataformas que no permiten devolverse** (Zajuna/SENA, navegación
+     restringida, intentos por expirar) → saltar por URL puede dejar el
+     intento **irrecuperable**.
+  2. Cada salto por URL arriesga **perder respuestas sin guardar** (V82),
+     dispara `beforeunload` (V87) y **consume el tiempo límite**: aquí la
+     lectura previa se llevó ~10 de 20 minutos y dejó el intento a punto de
+     expirar.
+  **Corrección**: ciclo **leer → procesar → responder → verificar → avanzar**
+  con la pregunta actual, y después la siguiente. Nunca "leo todo primero".
+  Antes de empezar solo se consulta la **landing** (límite de tiempo, método
+  de calificación, número de preguntas) **sin entrar en las preguntas**.
+- **El número de preguntas se lee del navegador lateral, no recorriendo las
+  páginas**: `document.querySelectorAll('a.qnbutton')` da el total en una sola
+  llamada, sin tocar ninguna pregunta. Útil para comprobar el presupuesto de
+  tiempo (pausas pedidas × N ≤ límite) antes de responder.
 - **Sandbox de `execute`: sin timers** (hallado en Moodle r22): `setTimeout` /
   `setInterval` no existen dentro de `{ code }` → `ReferenceError: Unknown
   identifier 'setTimeout'`. **Corrección**: nunca esperes con timers dentro de
