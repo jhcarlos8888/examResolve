@@ -84,7 +84,7 @@ en `references/audio-y-visual.md` (hallazgo V1).
 
 | Modo | Cuándo | Comportamiento |
 | --- | --- | --- |
-| `auto` | El usuario lo pide ("automático", "todo solo") o ya lo autorizó en el prompt | Responde todas las preguntas sin pausar; reporta al final |
+| `auto` | El usuario lo pide ("automático", "todo solo") o ya lo autorizó en el prompt | Responde todas las preguntas sin confirmar cada una, **pero con el ritmo que se acordó en la pregunta V95 (nunca a máxima velocidad)**; reporta al final |
 | `semi` | El usuario lo pide ("semiautomático", "quiero confirmar") o es el default cuando no especifica | Tras cada pregunta: muestra enunciado + opciones + su respuesta elegida y **espera confirmación con la herramienta `question`** antes de seleccionar |
 
 En `semi`, el formato de cada confirmación es:
@@ -105,6 +105,39 @@ Si el usuario pide un ritmo — *"2 minutos entre preguntas"*, *"espera"*,
 *"párate en cada una"* — **se respeta aunque el modo sea `--auto`**. Pedido
 explícito de ritmo **manda sobre la eficiencia del agente**; un examen
 terminado en 5 minutos cuando pidieron pausas es un fallo, no un acierto.
+
+#### PREGUNTA DE RITMO OBLIGATORIA al inicio (V95) — ANTES de tocar el examen
+
+**Antes del Paso 1 (detección), y sin importar que la entrada diga `--auto`,
+hay que preguntar SIEMPRE el ritmo con `question`** una sola vez. El motivo
+real: el usuario pidió "repartir el tiempo en una hora", pero esa instrucción
+llegó cuando ya iban 16 de 21 preguntas contestadas y ya no había vuelta atrás
+(un error del agente, no del usuario; r29/lectura-crítica).
+
+Cómo se hace (una sola pregunta, con la **landing ya leída**):
+
+1. Lee primero la landing: `N` de preguntas (navegateral/título), límite de
+   tiempo y método de calificación — **sin abrir ninguna página de preguntas**.
+2. Calcula el presupuesto: si el usuario pidió repartir el tiempo →
+   `pausa ≈ (tiempo_límite − margen_envío) / N`.
+3. Pregunta con `question`:
+
+   ```text
+   Este examen tiene N preguntas y un límite de X minutos.
+   Ritmo propuesto: <pausa> entre cada pregunta (≈ X min en total).
+   ¿Confirmas este ritmo o lo cambias?
+   ```
+
+   Opciones: `Ritmo propuesto (Recommended)` / `Más lento` / `Más rápido` /
+   `Sin pausas` / `Empezar`.
+
+4. **El ritmo elegido se aplica aunque el modo sea `--auto`** (pausas con
+   `shell sleep` entre respuestas). Nunca empieces a responder sin haber
+   cerrado esta pregunta — es lo que impide que un `--auto` se coma el
+   examen entero en 4 minutos.
+5. Si la entrada trae ya un ritmo explícito (*"pausa de 2 min"*), NO se
+   pregunta: se usa ese ritmo directamente (la pregunta solo es obligatoria
+   cuando **no** viene indicado).
 
 Cómo pausar sin timers (`execute` no tiene `setTimeout`, V86):
 

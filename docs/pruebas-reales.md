@@ -1461,6 +1461,38 @@ el radio **correctamente marcado**. Corrección: **exigir el separador** →
 `^[a-dA-D][.)-]\s*` (el `^[a-d]\.\s*` original de V90 ya lo hacía bien; el
 error fue generalizarlo con `?`).
 
+### V95 — El `--auto` se comió el examen antes de poder pedir ritmo (r30, lectura crítica CUN)
+
+**El error**: entrada con `--auto` y **sin ritmo definido** → el agente
+contestó **16 de 21 preguntas en ~4 minutos**. Cuando el usuario dijo
+*"reparta en tiempo para responder en una hora"* ya no había vuelta atrás
+(Moodle no deja deshacer respuestas), y su siguiente *"espera"* llegó cuando
+solo quedaban 4 preguntas. **El usuario pidió ritmo y no lo obtuvo donde
+importaba: al principio.**
+
+**Causa**: la regla V88 existía ("si pide ritmo, se respeta") pero era
+**reactiva**: solo aplicaba cuando el ritmo llegaba *mientras* se resolvía.
+Si la instrucción venía después de empezar (o en el prompt inicial no traía
+pausa explícita), el agente corría a máxima velocidad y el usuario ya no
+podía frenarlo a mitad de intento.
+
+**Corrección (V95, en `SKILL.md` → sección Ritmo)**: **la pregunta de ritmo
+es OBLIGATORIA y va ANTES del Paso 1**, con la landing ya leída (`N`
+preguntas + límite), y se resuelve con **una sola** `question`:
+
+```text
+Este examen tiene N preguntas y un límite de X minutos.
+Ritmo propuesto: <pausa> entre cada pregunta (≈ X min en total).
+¿Confirmas este ritmo o lo cambias?
+```
+
+- Aplica **incluso si la entrada dice `--auto`** (una excepción clara a
+  "sin preguntar": es la única pregunta previa al examen).
+- Se **omite** si la entrada ya trae el ritmo explícito
+  (*"pausa de 2 min entre preguntas"*), que se usa directamente.
+- Presupuesto: `pausa × N ≤ límite − margen de envío` (V88).
+- Nunca se inicia la respuesta sin cerrar esta pregunta.
+
 ## Errores del agente — no repetir
 
 Registro de los fallos reales de esta ronda, escritos en segunda persona como
