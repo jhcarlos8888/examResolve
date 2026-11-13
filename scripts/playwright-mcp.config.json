@@ -1,0 +1,10 @@
+{
+  "browser": {
+    "launchOptions": {
+      "args": [
+        "--window-size=1120,700",
+        "--window-position=1120,0"
+      ]
+    }
+  }
+}

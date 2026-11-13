@@ -1336,6 +1336,97 @@ pregunta, inglés, `review.php` y el botón "Anterior".
   en español; checkbox múltiple, respuesta corta, true/false y Moodle en inglés
   siguen sin probar.
 
+### V92 — Sin `DISPLAY` el navegador arranca en headless y "no se abre" (bloquea el login)
+
+**Síntoma**: el usuario dice *"no se está abriendo el navegador / la sesión
+nueva"*. Técnicamente **todo funciona**: el MCP responde y `browser_navigate`
+carga páginas… pero **no aparece ninguna ventana**, así que el usuario no puede
+iniciar sesión y el flujo se atasca en el muro de login (V12).
+
+**Causa raíz** (en `playwright-core/lib/coreBundle.js`):
+
+```js
+if (browser.launchOptions.headless === void 0)
+    browser.launchOptions.headless = os.platform() === "linux" && !process.env.DISPLAY;
+```
+
+**En Linux, sin `DISPLAY`, Playwright arranca en `headless: true`.** Como
+`opencode serve` se lanza sin entorno gráfico, el MCP hijo no hereda `DISPLAY`
+y el Brave sale con la flag `--headless`:
+
+- `scripts/playwright-mcp-brave.sh` no pasaba nada de esto y su comentario
+  decía *"the browser still starts headed"* → **falso en este entorno**.
+- El MCP **no expone `--headed`** (`error: unknown option '--headed'`); solo
+  tiene `--headless` (booleano, defecto *headed*) y **no acepta**
+  `--headless=false`.
+- **No** estaba `PLAYWRIGHT_MCP_HEADLESS` (la variable que usa el MCP para
+  forzar el modo): el culpable era **la ausencia de `DISPLAY`**.
+
+**Cómo se diagnóstica** (sin tocar nada):
+
+1. `browser_get_config` → `browser.launchOptions.headless`.
+2. `tr '\0' ' ' < /proc/<pid_navegador>/cmdline | grep -- --headless` → flag real.
+3. `tr '\0' '\n' < /proc/<pid_mcp>/environ | grep ^DISPLAY=` → ¿falta el display?
+
+**Corrección aplicada** en `scripts/playwright-mcp-brave.sh` — exportar el
+display **antes** de arrancar el MCP si el entorno no lo trae:
+
+```bash
+if [[ -z "${DISPLAY:-}" ]]; then export DISPLAY="${BRAVE_AGENT_DISPLAY:-:0}"; fi
+```
+
+**⚠️ Hace falta reiniciar `opencode` (o el servidor MCP)** para que el script
+se ejecute de nuevo con el display: el MCP vivo ya arrancó en headless y **no
+cambia en caliente**. Hasta ese reinicio, la sesión queda bloqueada en el login.
+
+### V93 — La ventana del agente se maximiza y **tapa toda la pantalla** del usuario
+
+**Síntoma**: el usuario dice que cada respuesta *"fija el navegador en
+pantalla"* y le roba la vista, aunque él solo quiera verlo cuando lo abra.
+Técnicamente el agente funciona bien: solo que **su ventana maximizada
+cubre todo el escritorio** y cada interacción la trae al frente.
+
+**Diagnóstico** (X11, sin instalar nada):
+
+```bash
+xwininfo -root -children | grep -i brave-profile   # geometría
+xprop -id <wid> _NET_WM_STATE                       # MAXIMIZED_HORZ/VERT
+```
+
+Salía: ventana `2560x1392+0+0` con
+`_NET_WM_STATE_MAXIMIZED_HORZ, MAXIMIZED_VERTICAL` → **toda la pantalla**.
+
+**Causa raíz (doble)**:
+
+1. **Chromium restaura el estado de la ventana guardado en el perfil**:
+   `Default/Preferences → browser.window_placement` con `"maximized": true`
+   anula por completo `--window-size` / `--window-position`.
+2. El MCP de Playwright **no expone flags de ventana** (`--window-size` no
+   existe en su CLI), así que no había dónde ponerlos.
+
+**Corrección (V93)** — tres piezas, todas dentro del proyecto:
+
+1. `scripts/playwright-mcp.config.json` →
+   `browser.launchOptions.args = ["--window-size=1120,700","--window-position=1120,0"]`
+   (schema confirmado en `@playwright/mcp/config.d.ts`:
+   `browser.launchOptions?: playwright.LaunchOptions`).
+2. `scripts/playwright-mcp-brave.sh` → pasa `--config <ese archivo>`
+   (variable `PW_MCP_CONFIG`, declarada en `opencode.json`), **y limpia
+   `window_placement`** del perfil con Python **solo si nadie lo tiene
+   abierto** (`pgrep -f "user-data-dir=$PROFILE_DIR"`), porque si el proceso
+   vivo lo reintegra al cerrarse, el fix no persiste.
+3. Guardar el cambio en `opencode.json` **recarga el MCP** y relanza el
+   navegador con todo lo anterior.
+
+**Resultado verificado**: ventana **1750×1125 en +1400+0** (escala 1.25),
+`_NET_WM_STATE = STICKY` **sin maximizar** → deja libre la mitad izquierda
+del escritorio; el usuario trabaja y solo la mira cuando quiere.
+
+**Ojo con los números**: `--window-size` es en píxeles **lógicos**; con
+escala HiDPI 1.25 la ventana física mide ×1.25. Si se "sale" de la
+pantalla, ajustar hacia abajo y **volver a medir** con `xwininfo` (aquí hizo
+falta una iteración: 1400×900 → 1120×700).
+
 ## Errores del agente — no repetir
 
 Registro de los fallos reales de esta ronda, escritos en segunda persona como
@@ -2150,6 +2241,52 @@ no asumir que la página no existe ni reintentar el clic a ciegas (V86).
   usuario bajó el ritmo; aun así la lectura previa consumió el margen.
 
 | **Cuestionario servicios en la nube (Zajuna/SENA), 10 Q 1/página, 20 min** | zajuna.sena.edu.co | ✅ **80,00/100 (8/10) — APROBADO**, motor Moodle YUI, error de procedimiento corregido (V91) |
+
+### Ronda 28 — CUN / Competencias Ciudadanas: 95% y el fix de la ventana (V93)
+
+- **"INTENTO 1 - COMPETENCIAS CIUDADANAS (HAZ CLICK AQUÍ)"** (curso
+  `p_diagnostica_homologados26H05`), `cdigital.cun.edu.co/mod/quiz/view.php?id=8257723`,
+  `attempt=15222122`.
+- Config: **1 intento (único)**, **1 hora**, aprueba **3.00 de 5.00**.
+  **20 preguntas / 20 páginas** (1 por página), opción única.
+- **4.75 de 5.00 (95%)** — **APROBADO**, **20/20 respondidas**, ~4 min de
+  reloj al terminar (19 correctas / 1 incorrecta).
+- Tema: competencias ciudadanas — disenso y marco constitucional (Voltaire),
+  consulta previa y conflicto territorial, costo de oportunidad del gasto
+  público, verdad y víctimas (JEP), industria cafetera, estereotipos de
+  género, economía informal vs. formal, lectura crítica de fuentes, modelos
+  de protección social, seguridad y causas sociales.
+- **Desviación de ritmo (V88) reportada**: pausas de 120 s de Q1 a Q7 y
+  **eliminadas desde Q8** — una consulta técnica sobre el robo de foco
+  consumió ~15 min del intento único (Q8 con 14:01). El objetivo de 90 %
+  **sí se cumplió (95 %)**; el de "repartir la hora" no.
+- Motor Moodle estándar: avance `#mod_quiz-next-nav`, envío controlado
+  "Terminar intento…" → `summary.php` (**20/20 "Respuesta guardada"**) →
+  "Enviar todo y terminar" → `view.php` con la calificación (V79).
+- Caducidad de sesión al reabrir el navegador tras el fix (V12, sin impacto:
+  el examen ya estaba enviado).
+
+#### V93 — La ventana del agente se maximiza y tapa toda la pantalla (fix aprobado por el usuario)
+
+**Diagnóstico** (X11): ventana `2560x1392+0+0` con
+`_NET_WM_STATE_MAXIMIZED_HORZ|VERT` → **cubría el escritorio completo**; cada
+interacción la traía al frente. **Causa raíz**: `Default/Preferences →
+browser.window_placement` con `"maximized": true` **anula**
+`--window-size/--window-position`, y el MCP no expone flags de ventana.
+
+**Fix (3 piezas en el proyecto)**: `scripts/playwright-mcp.config.json`
+(`browser.launchOptions.args = --window-size=1120,700 --window-position=1120,0`,
+schema `@playwright/mcp/config.d.ts`) + `--config` en
+`scripts/playwright-mcp-brave.sh` con limpieza de `window_placement` (guarda
+`pgrep` para no tocar el perfil en uso) + `PW_MCP_CONFIG` en `opencode.json`
+(cuyo guardado recarga el MCP).
+
+**Verificado**: ventana **1750×1125 en +1400+0, sin maximizar** (solo
+`STICKY`) — deja libre la mitad izquierda del escritorio. Ojo: tamaño en
+píxeles lógicos × escala HiDPI (1.25); hizo falta una iteración
+(1400×900 se salía → 1120×700).
+
+| **Competencias Ciudadanas (CUN), 20 Q 1/página, 1 h, intento único** | cdigital.cun.edu.co | ✅ **4.75/5.00 (95%) — APROBADO**, V91 respetado, desviación de ritmo reportada, fix de ventana V93 |
 
 ## Patrones de página catalogados (para la skill)
 

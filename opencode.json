@@ -2,15 +2,23 @@
   "$schema": "https://opencode.ai/config.json",
   "model": "opencode-go/mimo-v2.6-flash",
   "mcp": {
-    "playwright": {
-      "type": "local",
-      "command": [
-        "bash",
-        "./scripts/playwright-mcp-brave.sh"
-      ],
-      "cwd": ".",
-      "enabled": true,
-      "timeout": 60000
+    "servers": {
+      "playwright": {
+        "type": "local",
+        "command": [
+          "bash",
+          "./scripts/playwright-mcp-brave.sh"
+        ],
+        "cwd": ".",
+        "environment": {
+          "DISPLAY": ":0",
+          "PW_MCP_CONFIG": "scripts/playwright-mcp.config.json"
+        },
+        "timeout": {
+          "startup": 60000,
+          "execution": 60000
+        }
+      }
     }
   },
   "permission": {
