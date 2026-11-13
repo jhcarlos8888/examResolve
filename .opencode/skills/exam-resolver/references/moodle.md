@@ -1,22 +1,25 @@
 # Motor Moodle — `mod/quiz`
 
-Evidencia: **Rondas 14-20, 22, 23, 23b, 24 y 26**, `cdigital.cun.edu.co`
+Evidencia: **Rondas 14-20, 22, 23, 23b, 24, 26, 28 y 29**, `cdigital.cun.edu.co`
 (CUN) y `zajuna.sena.edu.co` (SENA), sesiones autenticadas 2026-10-15 a
-2026-10-20, 2026-10-27, 2026-10-28 y 2026-11-03 (V77-V84, V86-V88, V90 en
-`docs/pruebas-reales.md`).
+2026-10-20, 2026-10-27, 2026-10-28, 2026-11-03 y **2026-11-13** (V77-V84,
+V86-V88, V90 en `docs/pruebas-reales.md`).
 Volcados/sesión: `resolveLogs/2026-10-15_cdigital.cun.edu.co/`,
 `resolveLogs/2026-10-16_cdigital.cun.edu.co/`,
 `resolveLogs/2026-10-16_zajuna.sena.edu.co/`,
 `resolveLogs/2026-10-20_cdigital.cun.edu.co/`,
-`resolveLogs/2026-10-27_cdigital.cun.edu.co/` y
-`resolveLogs/2026-10-28_cdigital.cun.edu.co/`.
+`resolveLogs/2026-10-27_cdigital.cun.edu.co/`,
+`resolveLogs/2026-10-28_cdigital.cun.edu.co/` y
+**`resolveLogs/2026-11-13_cdigital.cun.edu.co/`** (r28/r29).
 
 > **Alcance de esta evidencia**: r14-r16, r19-r20, r22-r23 y **r24** (CUN): opción
 > única, **1 por página** (r14-r16, r19, **r24 = 20 páginas de 1 Q**) y **2 por
 > página (r20, r22, r23)**, interfaz en **español**, tema Bootstrap/moove.
 > r17-r18 (SENA/Zajuna): checkbox doble y radio, tema **YUI**, nota con coma
-> decimal. Lo que sigue sin volcado/evidencia está en la lista "Por confirmar":
-> no lo des como hecho.
+> decimal. **r28/r29 (CUN)**: **hasta 5 sub-preguntas por página**, matching
+> y cloze **por `<select>`**, preguntas y pasaje **en imagen** (V94), **sin
+> `a.qnbutton`**. Lo que sigue sin volcado/evidencia está en la lista "Por
+> confirmar": no lo des como hecho.
 
 ## Fingerprint (carga este archivo si aparece)
 
@@ -39,7 +42,10 @@ Volcados/sesión: `resolveLogs/2026-10-15_cdigital.cun.edu.co/`,
 | Paginación | **1 pregunta por página** en r14-r16 (CUN) y r17-r18 (SENA); **2 por página (5 páginas) confirmado en r20** (CUN, cmid 7941967). **En Moodle las preguntas por página las configura el profesor**: cuenta los `group "…Respuesta"` de la página antes de asumir; el título de la pestaña (`página N de M`) y los enlaces `Pregunta N` del navegador dan el total. |
 | Avance inferior | Botón `#mod_quiz-next-nav` (input submit) con texto **"Siguiente página"**; en la **última página** ese mismo botón cambia a **"Terminar intento..."** y envía el formulario `#responseform` (`action=…/processattempt.php`). El selector `#next-page` **no existe** en esta plantilla: usar `text=Siguiente página` o `#mod_quiz-next-nav`. **R16 reconfirmado**: `#mod_quiz-next-nav` funcionó en las 19 transiciones; en varias la navegación **sí se completó** pese al `TimeoutError 5000ms` de MCP — verificar título/URL (o el `qnbutton`) antes de reintentar. **R19 (V83)**: ese timeout pudo terminar en **HTTP 404 de `processattempt.php?cmid=…` sin `attempt`** → recuperar por URL directa `attempt.php?attempt=…&page=N`. **R22 (V86)**: porque el mismo selector significa dos cosas distintas según la página, un reintento a ciegas tras un `execute` fallido **puede pulsar "Terminar intento..." con preguntas sin responder** → leer `location.href` **y** el `value` del botón antes de clicar; un `ref` de snapshot ya no sirve tras navegar. |
 | Navegación lateral | Bloque `Pregunta N`… + **"Terminar intento..."** → `summary.php`. |
-| Respuesta única | Radios nativos `input[name="q<id>:<page>_answer"][value="X"]` + label con la opción. Clic nativo sobre el input funciona (sin AJAX extra); verificar con `input[name="…"]:checked` (V57). En la **ronda 15** consta que radio y checkbox de chrome de Moodle conviven en la página (ver "Ruido a filtrar"); la r14 no volcó radios. |
+| Respuesta única | Radios nativos `input[name="q<id>:<page>_answer"][value="X"]` + label con la opción. Clic nativo sobre el input funciona (sin AJAX extra); verificar con `input[name="…"]:checked` (V57). En la **ronda 15** consta que radio y checkbox de chrome de Moodle conviven en la página (ver "Ruido a filtrar"); la r14 no volcó radios. **R29**: un clic sobre el input **puede no tomar efecto** en un grupo concreto — reintentar por `id` (`q<id>_answer<N>`) antes de escalar; y **varios grupos en la misma página** (r29: Q2-Q6 y Q14-Q18, 5 groups `q…:<N>_answer` por página). |
+| **Matching / cloze con `<select>` (r29)** | **NO son radios**: `<select name="q<id>:<page>_subN">` (r29 p1: `_sub0…_sub4`) o `_subN_answer` (r29 p4: cloze de **8 huecos**), filas en `table.answer > tr.r0` = celda-descripción + `td.control` con "Respuesta N" + select. Responder con **setter nativo** (`HTMLSelectElement.prototype.value`) + `input`+`change`, **matcheando por texto de la opción** y verificando `options[selectedIndex].text` en la misma respuesta. |
+| **Preguntas/pasaje en IMAGEN (r29, V94)** | Señales de tránsito con `alt=""` y **el pasaje de comprensión lectora es un PNG** (`pluginfile.php/…/FCBayern (1).png`, 1414×2000) mientras las preguntas están en HTML: sin texto no se resuelve → **R5 si el modelo es texto-only**, o **R4** con modelo VL vía `browser_take_screenshot` (`fullPage:true` para varias imágenes, `target:"img[src*=…]"`+`scale:"device"` para una) → **`read` de la ruta** (sí entrega imágenes al modelo). |
+| **Sin navegador lateral `a.qnbutton` (r29)** | Esta plantilla no trae el bloque "Navegación por el cuestionario" (`a.qnbutton` = 0): el total de páginas sale del **título** `página N de M`. En `summary.php` la tabla sí lista **1 fila por pregunta** (r29: 17/17 "Respuesta guardada"). |
 | **Tema moove vs otros (V86, r22/r23)** | En la plantilla **moove** del CUN **no existe `div.question`** como contenedor de pregunta: no usarlo como raíz. Sí funcionan **`.qtext`** (enunciado) e `input[type=radio][name^="q"]` agrupados por `name`. El **label de cada opción NO usa `label[for=<id>]`** → `document.querySelector('label[for=…]')` devuelve vacío. **Ojo (corregido en r23)**: la vía `closest('div[id^="answer"]')` anotada en r22 **no es fiable** — en el Parcial 2 los radios cuelgan de `<div class="r0">` dentro de `<div class="answer">` **sin id**, y devolvió vacío. Usar **clase, no id**: **`r.closest('div.r0').innerText`** = una opción con su letra; **`r.closest('div.answer').innerText`** = el bloque completo a/b/c/d de la pregunta. |
 | **El texto de opción LLEVA la letra inicial (V90, r26)** | `r.parentElement.innerText` devuelve **`"c. El uso inadecuado de la IA…"`**, con el prefijo `a.`/`b.`/`c.`/`d.`. Un matcheo por `startsWith("El uso inadecuado…")` **nunca casa** → `NO_MARCO` con 0 marcados. **Corrección**: normalizar quitando la letra antes de comparar: **`txt.replace(/^[a-d]\.\s*/, '')`** y luego `startsWith`. En V/F las opciones no llevan letra (`"Verdadero"`/`"Falso"`), así que la misma normalización es inocua. |
 | **Guardado (V82)** | **El clic NO guarda**: el auto-save es `POST /mod/quiz/autosave.ajax.php` → `200 {"status":"OK","timeleft":N}`, con ventana de retardo. Una **recarga/navegación inmediata posterior al clic aborta el POST** (`beforeunload`) y la respuesta queda `value=-1` (pasó 3 veces seguidas en r19/r20). Regla: tras marcar, **esperar el POST en `browser_network_requests`** (o al menos no navegar/recargar en unos segundos) y **validar por recarga**: solo `:checked` + `a.qnbutton[title]` **tras recargar** prueban persistencia. |

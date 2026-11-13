@@ -1427,6 +1427,40 @@ escala HiDPI 1.25 la ventana física mide ×1.25. Si se "sale" de la
 pantalla, ajustar hacia abajo y **volver a medir** con `xwininfo` (aquí hizo
 falta una iteración: 1400×900 → 1120×700).
 
+### V94 — Preguntas con imagen en Moodle: R4 por screenshot→`read` (con modelo VL)
+
+**Contexto (r29, CUN INGLÉS, cmid 8257728)**: dos formatos dependen 100% de
+imágenes — **(a) 5 sub-preguntas con "señal"** (`pluginfile.php/…/image.png`,
+`alt=""`) y **(b) el pasaje de comprensión lectora como PNG** (1414×2000,
+nombre de archivo arbitrario: `FCBayern (1).png`), con las preguntas Q14-Q18
+en HTML y el texto SOLO en la imagen.
+
+**Sin modelo VL** → **R5** (reportar y parar; no adivinar): no hay OCR local
+(`tesseract`, `convert`, `magick` — los tres ausentes).
+
+**Con modelo VL** (`opencode/nemotron-3.5-super-vl-free`) → **R4 por archivo**
+(funciona aunque `browser_take_screenshot` devuelva solo la RUTA):
+
+```text
+browser_take_screenshot {fullPage:true, filename}        → 5 señales en 1 PNG
+browser_take_screenshot {target:"img[src*=FCBayern]",
+                         scale:"device", filename}       → pasaje a tamaño real
+read <ruta.png>                                          → el modelo VE la imagen
+```
+
+`read` **sí entrega imágenes al modelo** (comprobado); el screenshot
+`fullPage` cubre varias imágenes en una sola llamada. El cambio de modelo
+exige reiniciar la corrida (`./scripts/run.sh --model …`) → **dejar ancla de
+reanudación** en `resolveLogs/<sesión>/sesion.md` (attempt, cmid, página,
+ritmo, respuestas dadas) y continuar con la URL + `--continue`.
+
+**Regex de letra inicial (bug propio, V90)**: `^[a-dA-D]\s*[.)-]?` con el
+separador **opcional** se come la "A" de `"As unnecessary…"` (la `A` casa en
+`[a-dA-D]` y el resto es opcional) → la verificación devolvió **FALLO** con
+el radio **correctamente marcado**. Corrección: **exigir el separador** →
+`^[a-dA-D][.)-]\s*` (el `^[a-d]\.\s*` original de V90 ya lo hacía bien; el
+error fue generalizarlo con `?`).
+
 ## Errores del agente — no repetir
 
 Registro de los fallos reales de esta ronda, escritos en segunda persona como
@@ -2287,6 +2321,32 @@ píxeles lógicos × escala HiDPI (1.25); hizo falta una iteración
 (1400×900 se salía → 1120×700).
 
 | **Competencias Ciudadanas (CUN), 20 Q 1/página, 1 h, intento único** | cdigital.cun.edu.co | ✅ **4.75/5.00 (95%) — APROBADO**, V91 respetado, desviación de ritmo reportada, fix de ventana V93 |
+
+### Ronda 29 — CUN / INGLÉS: 91.67%, cambio de modelo a mitad del intento (V94)
+
+- **"INTENTO 1 - INGLÉS (HAZ CLIC AQUÍ)"** (mismo curso diagnóstico que r28),
+  `cdigital.cun.edu.co/mod/quiz/view.php?id=8257728`, `attempt=15225484`.
+- Config: **1 intento**, **1 hora**, aprueba **3.00/5.00**. **5 páginas**,
+  **17 preguntas con respuesta** (el slot 13 es la imagen del pasaje).
+- **4.58 de 5.00 (91.67%) — APROBADO** (meta del usuario 70%). Pérdida 0.42
+  ≈ 1-2 huecos; revisión no habilitada → no se identificaron.
+- **Modo semi** con confirmación por bloque + ritmo V88: aprobó 9 min, se
+  reajustó informado a **2 min** (al reanudar solo quedaban 0:33:55) + 4 min
+  finales → cierre con margen.
+- **Interrumpido a mitad** (R5 sobre Q2-Q6 con modelo texto-only) y
+  **reanudado** con `opencode/nemotron-3.5-super-vl-free` vía
+  `…view.php?id=8257728 --continue` → ancla en
+  `resolveLogs/2026-11-13_cdigital.cun.edu.co/sesion-ingles.md`.
+- Estructura nueva (todas en `references/moodle.md`): matching por
+  `<select>` (p1: `q…_sub0-4`; p4: cloze de 8 `q…_subN_answer`), **5
+  sub-preguntas con imagen por página** (p2), **pasaje en imagen** (p5),
+  **sin `a.qnbutton`** (el total salió del título `página N de 5`).
+- Verificación final: `summary.php` **17/17 "Respuesta guardada"** → modal →
+  fila "Calificación" (V79). `beforeunload`: 0 apariciones.
+- **V94**: R4 por screenshot→`read` con modelo VL; bug de la regex de letra
+  inicial (separador obligatorio). Detalle en Hallazgos → V94.
+
+| **INTENTO 1 INGLÉS (CUN), 17 Q en 5 páginas, 1 h, intento único** | cdigital.cun.edu.co | ✅ **4.58/5.00 (91.67%) — APROBADO**, semi + V88, R5→cambio de modelo→R4 (V94), 17/17 guardadas |
 
 ## Patrones de página catalogados (para la skill)
 
