@@ -3,7 +3,9 @@
     "launchOptions": {
       "args": [
         "--window-size=1120,700",
-        "--window-position=1120,0"
+        "--window-position=1120,0",
+        "--remote-debugging-address=127.0.0.1",
+        "--remote-debugging-port=0"
       ]
     }
   }

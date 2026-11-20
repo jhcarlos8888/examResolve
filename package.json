@@ -6,10 +6,14 @@
   "scripts": {
     "doctor": "./scripts/doctor.sh",
     "test": "node scripts/smoke.mjs",
+    "test:browser": "node scripts/browser-regression.mjs",
+    "test:mcp": "node scripts/mcp-regression.mjs",
+    "watch": "node scripts/watch-browser.mjs",
+    "watch:open": "node scripts/watch-browser.mjs --open",
     "test:headed": "node scripts/smoke.mjs --headed",
     "recon": "node scripts/recon.mjs",
     "typecheck": "tsc --noEmit",
-    "check": "npm run typecheck && npm test"
+    "check": "npm run typecheck && npm test && npm run test:browser && npm run test:mcp"
   },
   "dependencies": {
     "playwright-core": "^1.63.0"

@@ -1,497 +1,214 @@
-# OpenCode + Brave + Playwright MCP — Resolutor de exámenes
+# examResolve — OpenCode, agentes multimodelo y Playwright MCP
 
-Proyecto listo para usar **OpenCode como agente resolutor de exámenes**: le
-pasas la URL de un examen (o trabajas sobre la pestaña abierta) y el agente
-**detecta** si la página contiene un examen, **lee** enunciado y opciones,
-**propone** respuestas, **verifica** cada selección y **avanza** hasta entregar
-el reporte con la puntuación. La interacción con el navegador va por
-**Playwright MCP sobre Brave**.
+Herramienta local para **prácticas, simulacros y pruebas de QA autorizadas**. OpenCode coordina preguntas de una página usando Brave y Playwright MCP: detecta el cuestionario, lee enunciados y opciones, propone respuestas, verifica que cada selección quedó registrada, avanza y deja un informe. No puede garantizar acertar cualquier examen.
 
-Está pensado para **formación, QA y simulacros autorizados**: tus propias
-prácticas, pruebas de tus propias páginas y simulacros donde tienes permiso
-para automatizar.
+**Novedad principal:** el navegador trabaja **oculto por defecto**, sin quitar el foco a las otras aplicaciones. Puedes mirar una sesión activa desde un **visor privado de solo lectura** cuando lo necesites, sin traer Brave al frente.
 
-El `opencode.json` del repo trae `zen-proxy/mimo-v2.6-flash-free` como valor
-por defecto — gratuito y **texto-only**, no lee imágenes; si tu OpenCode no
-tiene ese proveedor, elige otro y cámbialo según
-[Cambiar el modelo](#cambiar-el-modelo).
+> Solo utiliza páginas que permitan este tipo de automatización. No intentes evitar proctoring, antibots, controles de acceso, restricciones de capturas o medidas de seguridad.
 
-## Uso autorizado
+## Requisitos e instalación
 
-- Automatiza **solo** exámenes y páginas para los que tengas permiso
-  (formación propia, QA, simulacros de práctica).
-- Si el sitio bloquea la automatización, muestra un muro de login, un
-  challenge o un control anti-bots, el agente **lo reporta y se detiene**: este
-  proyecto no evade esas protecciones ni el proctoring.
-- **Nunca** se crean cuentas ni se piden credenciales: si hace falta login, lo
-  hace la persona en el perfil del navegador del agente.
-- No se incluyen contraseñas, tokens ni cookies en el repo.
+Linux, Brave, Node.js 20+, npm, npx y OpenCode 2.x. Para los agentes DeepSeek y GLM configurados se requiere acceso a los modelos correspondientes de **OpenCode Go**; las cuotas y precios dependen del plan y pueden cambiar.
 
-## Quickstart
-
-Requisitos (detalle en [Requisitos](#requisitos)): Linux de escritorio con
-sesión gráfica, OpenCode, Brave y Node.js 20+.
-
-```bash
+~~~bash
 git clone https://github.com/jhcarlos8888/examResolve.git
 cd examResolve
 npm install
-npm run check                      # typecheck + smoke test: debe dar 31 OK, 0 fallos
-./scripts/resolve.sh https://URL-DEL-EXAMEN --semi
-```
+npm run doctor
+npm run check
+~~~
 
-Si algo falla, diagnostica con `npm run doctor` (29 comprobaciones: sistema,
-MCP, npm, scripts, skill y simuladores).
+Se usa `playwright-core` para las pruebas y el MCP `@playwright/mcp@0.0.83` fijado por versión para la sesión del agente. `scripts/install-browser.sh` permite verificar la disponibilidad del MCP.
 
-## Qué incluye
+## Primer uso
 
-- `opencode.json`: fija el modelo por defecto (`zen-proxy/mimo-v2.6-flash-free`),
-  registra un MCP local llamado `playwright` y define los permisos del agente.
-- `scripts/playwright-mcp-brave.sh`: encuentra automáticamente el ejecutable de
-  Brave y arranca `@playwright/mcp@0.0.83` con **todas las capacidades**
-  (vision, testing, network, storage, devtools, pdf, config), snapshot con
-  coordenadas y un perfil persistente separado.
-- `.opencode/skills/exam-resolver/SKILL.md`: skill del agente — núcleo del flujo
-  (detección, lectura, respuesta, verificación, avance, reporte), modos `semi`
-  (pregunta cada respuesta antes de seleccionarla) y `auto`, y **reglas de
-  seguridad operativa** (verificar antes de avanzar, `Show solution` solo
-  avisando, un cambio de paso no es "resuelto"). El núcleo se mantiene por
-  debajo de 350 líneas a propósito.
-- `.opencode/skills/exam-resolver/references/`: detalle por motor, cargado
-  **solo cuando toca** (tabla "Dispatcher de motores" en la skill).
-  `patrones-comunes.md` (trampas genéricas de páginas de examen),
-  `audio-y-visual.md` (imágenes/canvas y listening), `dexway.md` (V31-V76: voz,
-  role-play, tests), `articulate-storyline.md` (V24-V30), `moodle.md` (V77-V81:
-  motor Moodle `mod/quiz`).
-- `.opencode/command/resolver.md`: comando `/resolver [url] [--semi|--auto]`
-  dentro de OpenCode.
-- `scripts/resolve.sh`: un solo comando de terminal para arrancar la
-  resolución.
-- `scripts/smoke.mjs`: **test de regresión de la cadena completa** (`npm test`).
-  Levanta los simuladores en un puerto efímero, resuelve los 5 con los mismos
-  primitivos que usa el agente (`:checked`, setter nativo + eventos, texto exacto
-  visible, travesía de iframes) y verifica el `Resultado: N/N`. 31 aserciones.
-- `docs/capacidades-playwright.md`: matriz escenario → estrategia (escalera
-  R1-R5) de Playwright MCP.
-- `docs/pruebas-reales.md`: registro de pruebas reales — 18 rondas, hallazgos
-  **V1-V81** y la sección "Errores del agente — no repetir" (los contadores de
-  páginas/flujo y de URLs escaneadas viven ahí). **Los scores por sitio viven en
-  ese doc, no en este README.**
-- `docs/urls-recon*.txt` + `scripts/recon.mjs`: escáner estructural headless con
-  detección de audio/media (`npm run recon -- docs/urls-recon-r4.txt`).
-- `resolveLogs/`: archivo de sesiones de examen (`<AAAA-MM-DD>_<dominio>/` con
-  los volcados crudos + `sesion.md`). Los **volcados van en `.gitignore`** (los
-  `ref` de una sesión no sirven en otra); el **`sesion.md` sí se versiona** y es
-  lo que alimenta `references/` y `docs/pruebas-reales.md`.
-- `AGENTS.md`: instrucciones generales del agente (estrategia de interacción,
-  límites éticos).
-- `scripts/doctor.sh`: revisa sistema, configuración MCP, dependencias de npm,
-  scripts, skill, simuladores y permisos de `runtime/`.
-- `scripts/install-browser.sh`: comprueba que Playwright MCP 0.0.83 puede
-  descargarse.
-- `simulators/`: cinco simuladores locales (`index.html` clásico,
-  `formularios.html` tipos mixtos, `frame-examen.html`, `iframe-examen.html`
-  embebido, `spa-a11y.html` componentes custom) para validar toda la cadena
-  antes de probar páginas externas.
+~~~bash
+# Práctica autorizada con confirmación antes de cada respuesta:
+./scripts/resolve.sh https://ejemplo.org/simulacro --semi
 
-> **Nota**: OpenCode carga la configuración, las skills y los comandos al
-> arrancar. Después de cambiar `opencode.json`, la skill o el comando,
-> **reinicia OpenCode** para que los cambios tomen efecto.
+# Ejecución automática autorizada, pero con verificaciones:
+./scripts/resolve.sh https://ejemplo.org/simulacro --auto
 
-## Comprobaciones
-
-```bash
-npm run doctor      # 29 comprobaciones: sistema, MCP, npm, scripts, skill
-npm run typecheck   # tsc --noEmit sobre scripts/*.mjs
-npm test            # smoke test: resuelve los 5 simuladores y verifica N/N
-npm run check       # typecheck + test
-```
-
-## Arquitectura
-
-```text
-Brave
-  ↕
-Playwright MCP 0.0.83
-  ↕ MCP/stdio
-OpenCode (probado con 1.18.x)
-  ↕
-zen-proxy/mimo-v2.6-flash-free
-```
-
-OpenCode permite servidores MCP locales en `opencode.json`; el proyecto se
-limita a añadir el servidor de navegador y deja disponible el resto de la
-configuración global de OpenCode por combinación de configuraciones. El `model`
-se fija explícitamente en el proyecto (valor por defecto: MiMo V2.6 Flash Free).
-[OpenCode MCP docs](https://dev.opencode.ai/docs/mcp-servers/) ·
-[OpenCode config docs](https://dev.opencode.ai/docs/config/) ·
-[OpenCode models docs](https://dev.opencode.ai/docs/models/)
-
-Playwright MCP funciona por defecto en modo con navegador visible y utiliza
-snapshots de accesibilidad para interactuar. Vision Mode añade herramientas
-basadas en coordenadas para interfaces que no exponen controles útiles en el
-árbol de accesibilidad. [Playwright MCP](https://playwright.dev/mcp/introduction)
-· [Vision Mode](https://playwright.dev/mcp/vision-mode) ·
-[Profile & State](https://playwright.dev/mcp/configuration/user-profile)
-
-## Requisitos
-
-- Linux de escritorio con sesión gráfica.
-- OpenCode instalado y operativo.
-- Brave instalado.
-- Node.js 20+ y `npx`.
-
-Comprueba todo con:
-
-```bash
-cd <carpeta-del-proyecto>
-./scripts/doctor.sh
-```
-
-## Instalar
-
-Entra al directorio del proyecto:
-
-```bash
-cd <carpeta-del-proyecto>
-```
-
-Instala dependencias (necesarias para `npm test`, `recon` y el typecheck de
-`npm run check`):
-
-```bash
-npm install
-```
-
-Si descargaste el proyecto como ZIP, haz ejecutables los scripts por si no se
-conservaron los permisos:
-
-```bash
-chmod +x scripts/*.sh
-```
-
-Comprueba dependencias:
-
-```bash
-./scripts/doctor.sh
-```
-
-Pre-descarga/verifica el MCP:
-
-```bash
-./scripts/install-browser.sh
-```
-
-## Comprobar la cadena sin tocar un examen real
-
-Antes de la primera prueba manual, valida que todo el mecanismo funciona:
-
-```bash
-npm run check    # typecheck + smoke test
-```
-
-`npm test` levanta los cinco simuladores en un puerto efímero, abre Brave
-headless, resuelve cada examen y verifica el `Resultado: N/N`. Si esto pasa, la
-cadena del agente está sana; si falla, un examen real fallará también.
-
-## Primera prueba: simulador local
-
-Para ver el flujo a través del agente (con ventana visible), sirve el HTML con
-Python:
-
-```bash
-python3 -m http.server 8765 --directory simulators
-```
-
-En otra terminal:
-
-```bash
-cd <carpeta-del-proyecto>
-./scripts/run.sh
-```
-
-Dentro de OpenCode utiliza un prompt como:
-
-```text
-Usa la herramienta MCP de Playwright. Abre http://127.0.0.1:8765/index.html y ejecuta el simulador técnico de principio a fin. Lee cada pregunta y todas las opciones, decide la respuesta, selecciónala, verifica que quedó seleccionada y avanza hasta finalizar. Al terminar dime el resultado.
-```
-
-Brave aparecerá en modo visible y el perfil del agente quedará guardado en:
-
-```text
-runtime/brave-profile/
-```
-
-`runtime/` está en `.gitignore` (perfil de Brave, salidas de Playwright, logs y
-resultados de `recon`): es estado local, no código.
-
-La próxima ejecución reutilizará ese perfil. No uses simultáneamente ese perfil
-con otra instancia de Brave: un directorio de perfil solo puede estar abierto
-por un navegador a la vez.
-
-## Resolver un examen (flujo principal)
-
-Hay tres formas de disparar la resolución, de más directa a más manual:
-
-### 1. Un solo comando de terminal
-
-```bash
-# Examen en una URL, preguntando cada respuesta antes de seleccionarla (semi)
-./scripts/resolve.sh https://URL-DEL-EXAMEN --semi
-
-# Todo automático
-./scripts/resolve.sh https://URL-DEL-EXAMEN --auto
-
-# Sobre una pestaña ya abierta en el Brave del agente
+# Continuar sobre la pestaña ya abierta por el agente:
 ./scripts/resolve.sh --current --semi
-```
+~~~
 
-> `resolve.sh` incluye una **guardia de perfil**: si ya hay una sesión de
-> OpenCode/Playwright usando `runtime/brave-profile/`, se niega a lanzar
-> otra instancia (el perfil de Brave solo admite un navegador). Usa la
-> sesión existente con `/resolver`, o `--force` si es intencionado.
->
-> Con `--auto` además se pasa `--auto` a OpenCode, para que no se detenga a
-> pedir permiso en cada llamada al navegador durante un examen largo. En modo
-> `--semi` no se usa: las confirmaciones van por la herramienta `question`.
+- **Semi (por defecto):** propone la respuesta y te pregunta antes de seleccionarla.
+- **Auto:** no pide confirmación por cada respuesta, pero conserva las comprobaciones y la política de ritmo de la skill.
+- Ambos modos verifican el estado real de la página antes de avanzar y se detienen ante contenido ilegible o controles del sitio.
+- Si necesitas iniciar sesión en la plataforma, usa el modo visible descrito más abajo.
 
-### 2. Comando `/resolver` dentro de OpenCode
+También puedes entrar en OpenCode con `./scripts/run.sh` y escribir `/resolver URL --semi` o `/resolver --current --auto` dentro de OpenCode. El agente primero confirma que existe un examen y no inventa preguntas si está en otra página.
 
-```text
-/resolver https://URL-DEL-EXAMEN --semi
-/resolver --current --auto
-```
+## Navegador sin interrupciones
 
-### 3. Prompt libre (pestaña activa)
+### Oculto de forma predeterminada
 
-Si no pasas URL, el agente trabaja sobre la pestaña en la que se está parado:
+~~~bash
+./scripts/resolve.sh https://ejemplo.org/simulacro --auto
+# Alternativa con interfaz OpenCode:
+PW_BROWSER_MODE=background ./scripts/run.sh
+~~~
 
-```text
-Estamos en esta pestaña. Usa la skill exam-resolver en modo semi.
-Comienza a contestar.
-```
+`scripts/playwright-mcp-brave.sh` lanza Brave con `--headless` de forma predeterminada y deja de forzar el display gráfico de Linux. Por ello las acciones del agente no deberían robar el foco de tus otras ventanas.
 
-**Cómo detecta la pestaña activa:** el agente lista las pestañas del Brave
-del agente con `browser_tabs` y opera sobre la activa (o pregunta cuál si hay
-varias con dudas). Si la página que se necesita no está en el Brave del agente
-(perfil `runtime/brave-profile/`), ábrela primero allí o pásale la URL con
-`./scripts/resolve.sh <url>`.
+### Visor en vivo, solo cuando quieras
 
-En todos los casos el agente: **detecta** si la página contiene un examen →
-**lee** enunciado y opciones → **responde** → **verifica** la selección →
-**avanza** → repite hasta el final y entrega el reporte con la puntuación.
+En **otra terminal**, desde el proyecto:
 
-Tipos de pregunta soportados: opción única, varias correctas (checkbox),
-desplegable, verdadero/falso, respuesta corta, embebidos en iframe, exámenes
-paginados uno-por-página, arrastres, **listening con audio** (transcript en la
-página o captura del texto TTS del navegador), ejercicios de pronunciación /
-grabación de voz (el agente inyecta el audio como micrófono falso y lee la
-puntuación `word|score` del servidor) y role-play con IA.
+~~~bash
+npm run watch
+~~~
 
-Opciones visuales (imágenes, canvas, diagramas) **requieren un modelo
-multimodal**: el de por defecto es texto-only. La skill lo comprueba al
-arrancar y, si no ve imágenes, cambia de estrategia en vez de insistir.
+Se imprime un enlace parecido a `http://127.0.0.1:PUERTO/?key=TOKEN`. Abre esa URL en tu navegador personal **cuando decidas observar la ejecución**. El visor muestra una lista de pestañas y capturas que se actualizan aproximadamente cada 1,5 segundos. No hace clic, no envía respuestas y no activa ventanas del agente.
 
-> **Ejercicios de voz (Dexway y similares)**: el agente no tiene micrófono,
-> pero donde la página pide `getUserMedia` puede devolver un stream falso con
-> el audio oficial de la lección — **una sola reproducción por palabra/frase
-> (sin loop)** — y verificar con la nota del propio evaluador. El detalle
-> completo (V31-V76, motores, receta por tipo de exercise) está en
-> `.opencode/skills/exam-resolver/references/dexway.md`, y los resultados de
-> cada ronda en `docs/pruebas-reales.md`. Ojo → ver V38: si caduca la sesión
-> del LMS, la lección conserva el progreso y se retoma en el paso exacto.
-> Reglas duras al resolver Dexway: **verificar el valor real del campo antes de
-> pulsar `Next`** (V57), **`Show solution` solo como último recurso y avisando**
-> (V58) y **un cambio de número de paso no significa "resuelto"** (V59).
+Para abrir directamente el visor por decisión tuya:
 
-> **Preguntas 100% visuales** (imagen en el enunciado sin texto alternativo):
-> el modelo por defecto `mimo-v2.6-flash-free` **no puede leer imágenes**. La
-> skill hace esta comprobación una sola vez al arrancar
-> (`browser_take_screenshot` → *"Cannot read image"*) y, si falla, descarta R4
-> de entrada: extrae `alt`/`src` si ayudan y reporta la pregunta. Para
-> resolverlas, relanza con un modelo multimodal:
-> `./scripts/run.sh --model <proveedor>/<OTRO_MODELO>`.
+~~~bash
+npm run watch:open
+~~~
 
-> **Preguntas de audio sin transcripción**: el agente no puede oír audio.
-> Busca transcript (botón "Show transcript", `<track>`, DOM oculto) y, en
-> juegos TTS, captura el texto hablado; si no hay nada, reporta la pregunta
-> en lugar de adivinar. Escalera completa en
-> `.opencode/skills/exam-resolver/references/audio-y-visual.md`.
+Si el agente todavía no abrió Brave, el visor indica que está esperando la sesión. Puedes cerrar solo el visor con Ctrl+C: el agente sigue trabajando en su navegador.
 
-- **Modo `semi`** (default): tras cada pregunta muestra la respuesta elegida y
-  espera la confirmación en la terminal (`question`).
-- **Modo `auto`**: responde todo sin pausar y reporta al final.
+**Seguridad del visor:** el servidor HTTP y CDP se limitan a `127.0.0.1`. El visor genera un token aleatorio por arranque, usa cabeceras sin caché y no guarda las imágenes capturadas. **No compartas el enlace con token** ni expongas el puerto CDP a otras máquinas; CDP por sí mismo otorga amplio acceso al navegador a procesos locales.
 
-Si la página no contiene ningún examen, el agente lo dice y no inventa
-preguntas. Si el sitio bloquea la automatización, lo reporta y se detiene
-(no intenta evadir protecciones).
+### Modo visible para intervención humana
 
-## Probar una página externa a mano
+~~~bash
+PW_BROWSER_MODE=visible ./scripts/run.sh
+# También:
+./scripts/resolve.sh https://ejemplo.org/simulacro --semi --visible
+~~~
 
-Arranca OpenCode:
+La ventana visible puede recuperar el foco; úsala solo si necesitas interactuar o autenticarte manualmente. Cuando termines, **cierra la sesión que mantiene abierto el perfil** y vuelve al modo predeterminado. No es posible convertir en una ventana normal una instancia headless que ya está viva sin reiniciarla: para verla mientras trabaja usa el visor anterior.
 
-```bash
-./scripts/run.sh
-```
+Brave usa un perfil persistente y separado del navegador personal: `runtime/brave-profile/`. Guarda cookies y sesiones autenticadas entre ejecuciones, pero no garantiza que una página exacta siga abierta tras un reinicio. **No abras dos instancias con el mismo perfil** y no elimines ese directorio sin saber que perderás tus sesiones.
 
-Después indícale explícitamente la URL y que es un **simulacro
-autorizado/práctica**. Por ejemplo:
+## Arquitectura de modelos y subagentes
 
-```text
-Abre https://URL-DEL-SIMULACRO
-Es un simulacro de práctica que estoy autorizado a automatizar.
-Usa la skill exam-resolver en modo semi: detecta el examen, recorre las preguntas, propón respuestas y espera mi confirmación antes de cada una. Verifica cada selección y avanza hasta el final. No intentes evadir controles de seguridad del sitio.
-```
+~~~text
+OpenCode 2.x
+  exam-operator — DeepSeek V4.1 Flash (OpenCode Go)
+      ├── Pregunta textual clara → responde directamente
+      ├── Texto ambiguo o difícil → exam-reviewer — GLM 5.3 Flash (Go)
+      └── Gráfica/imagen/canvas → exam-vision — Nemotron 3.5 Super VL Free
+                   │                    (OpenCode, modelo visual)
+                   └── Captura del navegador vía Playwright MCP
+                                   ↓
+              Brave dedicado (headless por defecto)
+                                   ↓
+                 CDP localhost → visor opcional
+~~~
 
-## Cómo funciona el fallback
+| Agente | Modelo concreto | Responsabilidad |
+| --- | --- | --- |
+| `exam-operator` | `opencode-go/deepseek-v4.1-flash` | Orquestación, respuestas normales y comprobación |
+| `exam-reviewer` | `opencode-go/glm-5.3-flash` | Segunda opinión independiente ante dudas |
+| `exam-vision` | `opencode/nemotron-3.5-super-vl-free` | Lectura de fotografías, gráficos, diagramas, canvas, SVG y tablas visuales |
 
-La estrategia completa (escenarios, ejemplos de `browser_evaluate`, coste de
-tokens) está en `docs/capacidades-playwright.md`. Resumen de la escalera:
+La configuración está en `opencode.json` y las instrucciones de cada agente en `.opencode/agents/`. La configuración global de OpenCode del usuario **no se modifica**.
 
-### Ruta 1 — Accessibility snapshot (preferida)
+**Cambio automático por pregunta:** el operador no cambia el modelo de su sesión activa. Cuando necesita visión o revisión, invoca al subagente indicado, espera el resultado y decide qué seleccionar. No se llama a los tres modelos para todas las preguntas, evitando latencia y gasto innecesarios. Como la delegación es instruida a un modelo de IA, debe validarse en pruebas reales; no es una garantía algorítmica absoluta.
 
-El agente recibe una representación estructurada de la página y utiliza
-referencias para hacer `click`, `type`, `select`, etc.
+**Visión de Playwright no es comprensión visual:** `--caps vision` permite acciones por coordenadas. La interpretación semántica la hace el modelo multimodal cuando **recibe de verdad** una captura. Si una imagen es ilegible o el subagente no puede verla, el agente debe reconocer el límite y no adivinar.
 
-### Ruta 2 — búsqueda dentro del snapshot
+El modelo visual gratuito identificado pertenece al catálogo público **OpenCode**, no al listado de modelos Go gratuitos. DeepSeek y GLM Go están sujetos a las condiciones del plan. Comprueba la disponibilidad actual con:
 
-Cuando la página es grande, `browser_find` puede localizar texto relevante sin
-mandar todo el snapshot al modelo.
+~~~bash
+~/.opencode/bin/opencode models
+~~~
 
-### Ruta 3 — DOM por JavaScript
+En OpenCode 2.x, `opencode models opencode-go` es un comando **inválido**: `models` ya no acepta ese argumento. Para pruebas puntuales desde CLI, `opencode run --model proveedor/modelo "mensaje"` sí admite un modelo específico.
 
-Cuando el árbol de accesibilidad no expone los controles (SPAs, divs
-clickeables), `browser_evaluate` / `browser_run_code_unsafe` leen el DOM y
-aplican/verifican selecciones disparando los eventos que esperan los frameworks.
+## Flujo operativo y estrategias
 
-### Ruta 4 — Vision Mode
+1. Detecta si la URL o pestaña contiene una evaluación real, y distingue preguntas de filtros, login y controles decorativos.
+2. Lee el enunciado, opciones, contexto, elementos visibles e iframes.
+3. Delega a `exam-vision` cuando el contenido de una gráfica o imagen es indispensable; a `exam-reviewer` ante incertidumbre textual importante.
+4. En modo semi, solicita aprobación antes de cambiar la selección.
+5. Interactúa con la página y **verifica el valor real** (radio/checkbox marcado, texto guardado o estado interno) antes de avanzar.
+6. Repite, recoge la puntuación visible y documenta aciertos, errores, bloqueos y pendientes, sin inventar resultados.
 
-Se habilita con `--caps vision`. Esto añade interacción por coordenadas cuando
-un control visual no está expuesto de forma útil en el árbol de accesibilidad.
-Con `--snapshot-boxes` el propio snapshot lleva coordenadas, útil cuando la
-página bloquea capturas.
+| Ruta | Tecnología | Ejemplo |
+| --- | --- | --- |
+| R1 | Snapshot de accesibilidad | Radios, botones y textos |
+| R2 | Buscar dentro del snapshot | Páginas extensas |
+| R3 | DOM, eventos nativos y comprobación | SPA, controles personalizados |
+| R4 | Capturas multimodales y coordenadas | Imágenes, gráficos, canvas |
+| R5 | Reportar y detener | Bloqueos, protección o contenido ilegible |
 
-**Requiere que el modelo activo pueda leer imágenes.** El de por defecto
-(`mimo-v2.6-flash-free`) no puede: la skill lo detecta en la primera llamada y
-omite R4 por completo. Para usarla, relanza con un modelo multimodal.
+Las reglas específicas para Moodle, Dexway, Articulate Storyline, Clevry y NetAcad se cargan de las referencias cuando se reconoce su estructura. No garantizan compatibilidad con cualquier versión ni autorizan eludir controles de seguridad.
 
-### Ruta 5 — Reportar el bloqueo
+## Estructura del proyecto
 
-Si ninguna ruta anterior funciona (el sitio rechaza la interacción, las
-capturas, o la pregunta es ilegible), el agente explica el obstáculo y se
-detiene sin reintentar por la fuerza.
-
-### Cuando una página bloquea una técnica
-
-No existe una garantía de que una página permita automatización. Si el
-navegador no permite capturar una imagen, o el sitio bloquea la interacción
-automatizada, el agente debe detenerse. Este proyecto no intenta saltarse esas
-protecciones.
-
-## Perfil de Brave y sesiones
-
-El MCP usa un perfil separado del Brave personal para evitar bloquear o alterar
-el perfil habitual de quien lo use. La sesión persistente conserva cookies y
-almacenamiento entre ejecuciones.
-
-Si quieres empezar completamente limpio:
-
-```bash
-rm -rf runtime/brave-profile
-```
-
-## Cambiar el modelo
-
-El proyecto viene fijado a:
-
-```text
-zen-proxy/mimo-v2.6-flash-free
-```
-
-El modelo lo aporta OpenCode y el proveedor que se configure: **este proyecto
-no usa Ollama** ni depende de él.
-
-Es un modelo **texto-only**: rápido y gratuito, pero no lee imágenes. Para
-exámenes con preguntas visuales (diagramas, canvas, opciones fotográficas) usa
-uno multimodal:
-
-```bash
-./scripts/run.sh --model <proveedor>/<OTRO_MODELO>
-```
-
-El ID de modelo de OpenCode sigue el formato `provider/model`. Lista los
-disponibles con `opencode models <proveedor>` (por ejemplo
-`opencode models zen-proxy`).
-
-Si el proveedor del valor por defecto no está configurado en tu OpenCode,
-define tu propio proveedor en tu configuración global y cambia el `model` de
-`opencode.json` por el tuyo (o elimina esa línea para que gane tu configuración
-global).
-
-## Cambiar el ejecutable de Brave
-
-Normalmente el script encuentra:
-
-```bash
-command -v brave-browser-stable
-```
-
-o:
-
-```bash
-command -v brave-browser
-```
-
-Se puede forzar:
-
-```bash
-export BRAVE_EXECUTABLE=/ruta/a/brave-browser
-./scripts/run.sh
-```
-
-## Diagnóstico MCP
-
-Con el proyecto abierto, se pueden comprobar los MCP de OpenCode con:
-
-```bash
-opencode mcp list
-```
-
-Deberías ver `playwright` como servidor configurado. Los MCP locales se
-ejecutan como procesos locales y sus herramientas quedan disponibles para el
-LLM en OpenCode.
-
-## Permisos
-
-`opencode.json` fija un bloque `permission` acorde al uso del proyecto:
-
-| Regla | Efecto |
+| Archivo/directorio | Para qué sirve |
 | --- | --- |
-| `question: allow` | Las confirmaciones del modo `semi` nunca se bloquean |
-| `bash: ask` por defecto | El agente no ejecuta comandos arbitrarios sin aprobación explícita |
-| `bash: allow` para `./scripts/*`, `npm test`, `npm run*`, `node scripts/recon.mjs` | Los scripts del propio proyecto sí pasan |
-| `external_directory: ask` | No sale del directorio del proyecto sin permiso |
+| `opencode.json` | Modelo, agente principal, permisos OpenCode V2 y MCP |
+| `.opencode/agents/` | Operador DeepSeek, revisor GLM, especialista visual |
+| `.opencode/skills/exam-resolver/SKILL.md` | Flujo central, control de ritmo y dispatcher de plataformas |
+| `.opencode/skills/exam-resolver/references/` | Reglas y patrones de cada plataforma, audio y visión |
+| `.opencode/command/resolver.md` | Comando `/resolver` |
+| `AGENTS.md` | Instrucciones generales y límites operativos |
+| `scripts/playwright-mcp-brave.sh` | Inicio del MCP y selección headless/visible |
+| `scripts/playwright-mcp.config.json` | Configuración Brave y puerto CDP local |
+| `scripts/watch-browser.mjs` y `monitor.html` | Visor privado de solo lectura |
+| `scripts/resolve.sh` y `scripts/run.sh` | Flujos de inicio |
+| `scripts/smoke.mjs` | Pruebas de los cinco simuladores |
+| `scripts/browser-regression.mjs` | Pruebas reales del visor, foco y conexión CDP |
+| `scripts/mcp-regression.mjs` | Prueba MCP real por JSON-RPC: navegación, DOM, snapshots y capturas |
+| `docs/capacidades-playwright.md` | Matriz detallada R1–R5 |
+| `docs/pruebas-reales.md` | Registro histórico de hallazgos y sesiones |
+| `docs/urls-recon*.txt` y `scripts/recon.mjs` | Reconocimiento estructural de páginas |
+| `resolveLogs/` | Registro de sesiones; resúmenes seleccionados versionados |
+| `runtime/` | Perfil y capturas locales; excluido de Git |
 
-Las herramientas del MCP de Playwright no pasan por este filtro. En modo
-`auto`, `resolve.sh` además pasa `--auto` a OpenCode para que no se detenga a
-pedir permiso en cada llamada.
+## Diagnóstico y pruebas
 
-El `timeout` del servidor MCP está en **60 s** (por defecto son 5 s): el primer
-`npx -y @playwright/mcp` descarga el paquete y con 5 s el arranque falla de
-forma intermitente.
+~~~bash
+npm run doctor         # Revisa sistema, modelos configurados, archivos y MCP V2
+npm run typecheck      # Comprobación TypeScript de scripts
+npm test               # 31 aserciones en 5 simuladores (Brave oculto)
+npm run test:browser   # 7 verificaciones: CDP, token, capturas y foco
+npm run test:mcp       # 6 verificaciones: MCP real, navegación, DOM e imágenes
+npm run check          # Typecheck y las tres baterías de pruebas
+~~~
 
-## Notas sobre Brave
+**Qué cubren las pruebas:** radios, múltiples respuestas, selects, texto, iframes, SPA, conexiones CDP, capturas en vivo, foco y el protocolo MCP real conectado a un simulador local. Son 44 aserciones funcionales (31 + 7 + 6). **Qué NO cubren:** la exactitud de todos los modelos de IA, sus respuestas reales, las delegaciones en todas las plataformas ni los cambios de páginas ajenas. Probar primero con simuladores propios.
 
-Playwright MCP permite pasar un `--executable-path`, por lo que no dependemos
-del canal de navegador `chrome` para usar Brave. El proyecto usa esta vía
-explícita.
+Para una prueba manual local, ejecuta en otra terminal:
 
-## Seguridad práctica
+~~~bash
+python3 -m http.server 8765 --directory simulators
+~~~
 
-- No guardes contraseñas, tokens ni cookies del perfil personal dentro del
-  proyecto. Si un sitio requiere autenticación, inicia sesión manualmente en el
-  perfil dedicado del agente (`runtime/brave-profile/`).
-- `runtime/` y `resolveLogs/` contienen estado local: el primero está entero en
-  `.gitignore`, del segundo solo se versionan los `sesion.md`.
-- Ante un muro, un challenge o un control anti-bots: reportarlo y parar
-  (ver [Uso autorizado](#uso-autorizado)).
+Después inicia `./scripts/run.sh` y escribe `/resolver http://127.0.0.1:8765/index.html --semi`.
+
+## Preguntas frecuentes y solución de errores
+
+**«opencode no encontrado»:** los scripts reconocen también `~/.opencode/bin/opencode`. Verifica con `~/.opencode/bin/opencode --version`.
+
+**«El navegador sigue poniéndose delante»:** confirma `PW_BROWSER_MODE=background`, cierra sesiones MCP antiguas que se iniciaron en visible y crea una sesión nueva. Las preferencias solo se aplican al arrancar el MCP.
+
+**«El visor está esperando»:** el MCP aún no abrió Brave, tu sesión terminó o `BRAVE_AGENT_PROFILE` apunta a otro directorio. Inicia una acción de navegación del agente.
+
+**«Perfil ocupado»:** cierra otra sesión del agente que use `runtime/brave-profile/`. No compartas el perfil entre dos servidores.
+
+**«El modelo no ve las imágenes»:** comprueba la invocación de `exam-vision` y que `browser_take_screenshot` le entregue una captura como imagen. Consulta `references/audio-y-visual.md`. Sin imagen legible, reporta y detente.
+
+**«No aparece Playwright MCP»:** asegúrate de abrir el proyecto desde su raíz y de que OpenCode cargó `opencode.json`. En V2 los comandos pueden consultar el servicio global en lugar de la sesión del proyecto. Revisa `opencode debug config` y la interfaz de MCP dentro de esa sesión.
+
+**Timeout o acción dudosa:** el MCP tiene 60 segundos para catálogo y ejecución. Verifica el estado del DOM antes de reintentar; un fallo de herramienta no implica que el clic anterior se haya revertido.
+
+**Cambios que no surten efecto:** reinicia la sesión o recarga OpenCode: un MCP ya arrancado conserva los argumentos con los que se inició.
+
+## Privacidad y uso seguro
+
+- No captures credenciales ni guardes tokens del sitio en archivos versionados. El perfil dedicado contiene cookies y es información sensible.
+- No compartas el enlace del visor; aunque la página del visor es de lectura, el puerto CDP local es privilegiado.
+- Antes de publicar commits, revisa `resolveLogs/*/sesion*.md`: los resúmenes podrían contener preguntas y datos identificables.
+- No evadas sistemas de vigilancia, anti-bots, límites de intentos ni bloqueos de captura.
+- Los resultados de IA son probabilísticos: verifica la respuesta y no declares puntuación sin evidencia.
+- `auto` no implica permisos ilimitados ni asegura que nunca haya que intervenir.
+- El visor no permite hacer login, pulsar controles ni reanudar un examen manualmente; para eso usa el modo visible.
+
+Consulta la [licencia](LICENSE), las [capacidades Playwright](docs/capacidades-playwright.md) y el [historial de pruebas reales](docs/pruebas-reales.md).

@@ -2,90 +2,64 @@
 set -euo pipefail
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$ROOT_DIR"
-
 usage() {
   cat <<'MSG'
 Uso:
-  ./scripts/resolve.sh <url> [--semi|--auto]     Abrir y resolver el examen de la URL
-  ./scripts/resolve.sh --current [--semi|--auto] Resolver el examen de la pestaña activa
-  Opciones: --force  Ignorar la guardia de perfil de Brave en uso
-
-Ejemplos:
-  ./scripts/resolve.sh https://ejemplo.com/examen --semi
-  ./scripts/resolve.sh --current --auto
-
-Arranca OpenCode (TUI) con un prompt que sigue la skill exam-resolver.
-También puedes usar el comando /resolver dentro de OpenCode.
-Requiere que el MCP playwright esté habilitado en opencode.json.
+  ./scripts/resolve.sh https://URL [--semi|--auto] [--background|--visible]
+  ./scripts/resolve.sh --current [--semi|--auto] [--background|--visible]
+Modo de navegador por defecto: --background (sin ventanas ni cambios de foco).
+Para observarlo en cualquier momento: npm run watch (abre la URL local que imprime).
+Para hacer login manual: lanza una sesión nueva con --visible, luego vuelve a --background.
 MSG
 }
-
 URL=""
 TARGET="auto"
 MODE=""
 FORCE=0
-
 while [[ $# -gt 0 ]]; do
   case "$1" in
     -h|--help) usage; exit 0 ;;
-    --current) TARGET="current"; shift ;;
-    --semi) MODE="--semi"; shift ;;
-    --auto) MODE="--auto"; shift ;;
+    --current) TARGET=current; shift ;;
+    --semi) MODE=--semi; shift ;;
+    --auto) MODE=--auto; shift ;;
+    --visible) export PW_BROWSER_MODE=visible; shift ;;
+    --background) export PW_BROWSER_MODE=background; shift ;;
     --force) FORCE=1; shift ;;
     http://*|https://*) URL="$1"; shift ;;
-    *) echo "[ERROR] Argumento no reconocido: $1" >&2; usage; exit 1 ;;
+    *) echo "[ERROR] Argumento desconocido: $1" >&2; usage; exit 2 ;;
   esac
 done
+if [[ -z "$URL" && "$TARGET" == auto ]]; then
+  echo "[ERROR] Indica una URL o --current." >&2; usage; exit 2
+fi
 
-# Guardia: el perfil persistente de Brave solo admite una instancia.
-# Si otra sesión de OpenCode/Playwright ya lo usa, lanzar otra chocaría.
-if [[ "$FORCE" -ne 1 ]]; then
-  LOCK="$ROOT_DIR/runtime/brave-profile/SingletonLock"
-  locked_pid=""
-  if [[ -e "$LOCK" ]]; then
-    target="$(readlink "$LOCK" 2>/dev/null || basename "$LOCK" 2>/dev/null || true)"
+# Impedir usar dos procesos con un perfil Chromium persistente; --force explícito.
+if [[ "$FORCE" != 1 ]]; then
+  lock="$ROOT_DIR/runtime/brave-profile/SingletonLock"
+  if [[ -L "$lock" ]]; then
+    target="$(readlink "$lock" || true)"
     locked_pid="${target##*-}"
-  fi
-  if [[ -n "$locked_pid" && "$locked_pid" =~ ^[0-9]+$ ]] && kill -0 "$locked_pid" 2>/dev/null; then
-    echo "[ERROR] runtime/brave-profile está en uso por el proceso $locked_pid." >&2
-    echo "        Cierra esa sesión de OpenCode/Brave (o espera a que termine)" >&2
-    echo "        antes de lanzar otra. Si es intencionado, repite con --force." >&2
-    exit 1
-  fi
-  if pgrep -f "@playwright/mcp" >/dev/null 2>&1; then
-    echo "[ERROR] Ya hay un servidor MCP playwright corriendo (probablemente" >&2
-    echo "        la sesión de OpenCode actual). Usa esa sesión con /resolver," >&2
-    echo "        ciérrala, o repite con --force si sabes lo que haces." >&2
-    exit 1
+    if [[ "$locked_pid" =~ ^[0-9]+$ ]] && kill -0 "$locked_pid" 2>/dev/null; then
+      # Un servidor OpenCode V2 puede compartir su MCP entre sesiones del mismo proyecto.
+      # Si el servidor ya gestiona este perfil, permitir reutilizarlo en vez de bloquear
+      # todos los nuevos comandos (el servidor decide si debe crear otra instancia).
+      if pgrep -af '@playwright/mcp' 2>/dev/null | grep -Fq -- "--user-data-dir $ROOT_DIR/runtime/brave-profile"; then
+        echo "[INFO] Perfil ocupado por el MCP del proyecto; se reutilizará la sesión existente." >&2
+      else
+        echo "[ERROR] El perfil Brave del agente está en uso (PID $locked_pid)." >&2; exit 1
+      fi
+    fi
   fi
 fi
 
-if [[ -z "$URL" && "$TARGET" == "auto" ]]; then
-  echo "[ERROR] Indica una URL o --current." >&2
-  usage
-  exit 1
+if ! command -v opencode >/dev/null 2>&1 && [[ -x "$HOME/.opencode/bin/opencode" ]]; then
+  export PATH="$HOME/.opencode/bin:$PATH"
 fi
-
-if [[ -n "$URL" ]]; then
-  ARGS="$URL ${MODE:-}"
-else
-  ARGS="--current ${MODE:-}"
-fi
-
-MODE_TXT="semiautomático (confirma cada respuesta con question)"
-if [[ "$MODE" == "--auto" ]]; then
-  MODE_TXT="automático (responde todo sin pausar)"
-fi
-
-PROMPT="Resuelve un examen siguiendo la skill exam-resolver (equivalente al comando /resolver). Entrada: ${ARGS}. Modo: ${MODE_TXT}. Detecta primero si la página contiene un examen; si no lo hay, dilo y no inventes preguntas. Después responde, verifica cada selección y avanza hasta el resultado final. No evadas protecciones del sitio."
-echo "[resolve] Prompt: $PROMPT"
-
-# En modo auto se auto-aprueban los permisos para que un examen de 40
-# preguntas no se detenga en cada llamada. En modo semi NO se usa: las
-# confirmaciones van por la herramienta `question`, que sí se pide.
-if [[ "$MODE" == "--auto" ]]; then
-  echo "[resolve] Modo auto: auto-aprobando permisos del agente"
-  exec opencode --auto --prompt "$PROMPT"
-fi
-
+command -v opencode >/dev/null 2>&1 || { echo "[ERROR] No encuentro opencode" >&2; exit 1; }
+ARGS="${URL:-"--current"} ${MODE}"
+MODE_TEXT="semi (confirmar cada selección)"
+if [[ "$MODE" == --auto ]]; then MODE_TEXT="auto (sin confirmación por pregunta)"; fi
+PROMPT="Usa el agente exam-operator y la skill exam-resolver. Entrada: $ARGS. Modo: $MODE_TEXT. Detecta el examen primero; consulta exam-vision para preguntas visuales y exam-reviewer para razonamientos ambiguos; espera sus resultados antes de actuar. Verifica cada selección antes de avanzar. No eludas protecciones de sitios ni inventes respuestas ilegibles."
+echo "[examResolve] navegador: ${PW_BROWSER_MODE:-background}; $MODE_TEXT"
+if [[ "$MODE" == --auto ]]; then exec opencode --auto --prompt "$PROMPT"; fi
 exec opencode --prompt "$PROMPT"

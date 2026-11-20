@@ -4,8 +4,7 @@ Trucos y trampas genéricos, verificados en W3Schools, ComputerIELTS,
 fivesql, javaguides, gokwiz, sqlquiz, indiabix, math-questions,
 British Council, Quizalize, fatskills y javacodepoint.
 
-Los 10 más caros están resumidos en `SKILL.md` (sección "Patrones
-generales: los que más cuestan"). Este archivo tiene el detalle completo.
+La skill principal enlaza este archivo para conservar el detalle sin crecer excesivamente. Contiene las reglas generales y su justificación.
 
 ## Trucos de implementación probados en páginas reales
 

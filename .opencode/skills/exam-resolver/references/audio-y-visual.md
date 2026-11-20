@@ -13,17 +13,17 @@ los fragmentos de código.
    `aria-label`, `data-*`, el texto del contenedor y el **nombre de archivo
    del `src`** si es descriptivo (`usb-port.jpg`) — todo vía
    `browser_evaluate`.
-2. **Limitación del modelo**: si el modelo activo no soporta imágenes,
-   `browser_take_screenshot` falla con *"Cannot read image"*. En ese caso:
-   - No insistas con capturas.
-   - Responde las preguntas cuyo enunciado/opciones sean texto.
-   - Para las 100% visuales → **R5**: reporta "pregunta visual no legible
-     con el modelo actual" y ofrece al usuario cambiar a un modelo
-     multimodal (`./scripts/run.sh --model <modelo-con-visión>`) o
-     resolverlas manualmente.
-3. Si el modelo **sí** soporta imágenes (multimodal): Vision Mode completo —
-   captura, elige por posición y haz click con `browser_mouse_click_xy`
-   (o `[box=...]` del snapshot).
+2. **Delegación especializada automática:** el agente principal
+   `exam-operator` usa DeepSeek Flash para texto, pero cuando una respuesta
+   depende de información visual debe invocar `exam-vision` (Nemotron
+   3.5 Super VL Free). Este subagente usa `browser_take_screenshot` del
+   MCP compartido y devuelve transcripción, ejes/leyendas, opción,
+   razonamiento y confianza. Evita tomar capturas de pantalla completa si
+   es posible capturar el elemento específico a mejor resolución.
+3. **Fallo de visión:** si el subagente no recibe la imagen, informa
+   "pregunta visual no legible", solicita intervención manual o usa
+   solo las partes realmente legibles; no adivines ni confundas
+   `--caps vision` con la capacidad multimodal del modelo.
 4. Verifica la selección igual que en cualquier otro tipo (nunca asumas que
    el click acertó).
 

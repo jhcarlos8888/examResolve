@@ -1,35 +1,62 @@
 {
   "$schema": "https://opencode.ai/config.json",
-  "model": "opencode/nemotron-3.5-super-vl-free",
+  "model": "opencode-go/deepseek-v4.1-flash",
+  "default_agent": "exam-operator",
   "mcp": {
     "servers": {
       "playwright": {
         "type": "local",
+        "disabled": false,
         "command": [
           "bash",
           "./scripts/playwright-mcp-brave.sh"
         ],
         "cwd": ".",
         "environment": {
-          "DISPLAY": ":0",
           "PW_MCP_CONFIG": "scripts/playwright-mcp.config.json"
         },
         "timeout": {
-          "startup": 60000,
+          "catalog": 60000,
           "execution": 60000
         }
       }
     }
   },
-  "permission": {
-    "question": "allow",
-    "bash": {
-      "*": "ask",
-      "./scripts/*": "allow",
-      "npm test*": "allow",
-      "npm run*": "allow",
-      "node scripts/recon.mjs*": "allow"
+  "permissions": [
+    {
+      "action": "question",
+      "resource": "*",
+      "effect": "allow"
     },
-    "external_directory": "ask"
-  }
+    {
+      "action": "shell",
+      "resource": "*",
+      "effect": "ask"
+    },
+    {
+      "action": "shell",
+      "resource": "./scripts/*",
+      "effect": "allow"
+    },
+    {
+      "action": "shell",
+      "resource": "npm test*",
+      "effect": "allow"
+    },
+    {
+      "action": "shell",
+      "resource": "npm run*",
+      "effect": "allow"
+    },
+    {
+      "action": "shell",
+      "resource": "node scripts/recon.mjs*",
+      "effect": "allow"
+    },
+    {
+      "action": "external_directory",
+      "resource": "*",
+      "effect": "ask"
+    }
+  ]
 }

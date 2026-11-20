@@ -1,0 +1,51 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="referrer" content="no-referrer">
+<title>examResolve · Visor privado</title>
+<style>
+:root {color-scheme:dark}
+body{margin:0;background:#0d1017;color:#e8edf5;font:15px system-ui,Arial,sans-serif}
+header{display:flex;align-items:center;gap:14px;flex-wrap:wrap;padding:14px 20px;background:#161d2a;border-bottom:1px solid #354057}
+h1{font-size:19px;margin:0} small{color:#9dacbd} select{max-width:46vw;min-width:180px;padding:8px;color:#eee;background:#222e42;border:1px solid #55617c;border-radius:8px}
+#status{padding:8px 20px;color:#b6bfce}main{margin:auto;max-width:1300px;padding:0 16px 20px}
+img{display:block;width:100%;height:auto;max-height:75vh;object-fit:contain;object-position:top center;border-radius:8px;border:1px solid #354057;background:#182131}
+.info{font-size:12px;margin-left:auto;color:#7de1ad}
+</style>
+</head>
+<body>
+<header><h1>examResolve · Monitor</h1><select id="tabs" aria-label="Pestaña observada"></select><small>Capturas automáticas, sin tomar el foco</small><span class="info">SÓLO LECTURA</span></header>
+<div id="status" role="status">Conectando con Brave del agente…</div>
+<main><img id="image" alt="Vista actual del navegador del agente"></main>
+<script>
+const key=new URL(location.href).searchParams.get('key') || '';
+const tabs=document.getElementById('tabs'), status=document.getElementById('status'), image=document.getElementById('image');
+let selected=null, refreshing=false;
+async function refresh(){
+  if(refreshing)return;
+  refreshing=true;
+  try{
+    const response=await fetch('/api/pages?key='+encodeURIComponent(key),{cache:'no-store'});
+    const data=await response.json();
+    if(!response.ok)throw Error(data.error || 'Navegador no disponible');
+    const current=data.pages.map(p=>p.id);
+    if(selected===null || !current.includes(Number(selected)))selected=current.at(-1) ?? null;
+    tabs.replaceChildren();
+    for(const p of data.pages){
+      const opt=document.createElement('option');opt.value=String(p.id);opt.textContent=p.title+' — '+p.url;opt.selected=p.id===Number(selected);tabs.appendChild(opt);
+    }
+    if(selected===null){status.textContent='Sin páginas abiertas. El visor espera a que el agente navegue.';image.removeAttribute('src');}
+    else {
+      status.textContent='Observando pestaña '+(Number(selected)+1)+' · Se actualiza cada 1,5 segundos.';
+      image.src='/api/screenshot?key='+encodeURIComponent(key)+'&id='+selected+'&t='+Date.now();
+    }
+  }catch(e){status.textContent='Esperando sesión: '+e.message;image.removeAttribute('src');}
+  finally{refreshing=false;}
+}
+tabs.addEventListener('change',()=>{selected=Number(tabs.value);refresh();});
+refresh();setInterval(refresh,1500);
+</script>
+</body>
+</html>

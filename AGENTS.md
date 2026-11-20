@@ -2,7 +2,7 @@
 
 ## Purpose
 This project is a local browser-agent harness for authorized training, QA, and exam-simulation pages.
-The agent uses OpenCode's configured model and the Playwright MCP browser tools. Do not introduce Ollama into this project.
+The primary agent `exam-operator` uses OpenCode Go DeepSeek V4.1 Flash. It delegates ambiguous text to GLM 5.3 Flash and visual questions to the free multimodal Nemotron 3.5 Super VL subagent. All browser work uses the same Playwright MCP context. Do not introduce Ollama.
 
 ## Exam resolution
 The full detection-and-answering workflow lives in the project skill
@@ -23,9 +23,8 @@ contestar" on the current page). Key points it defines:
   R3 `browser_evaluate`/`browser_run_code_unsafe` → R4 vision mode →
   R5 report the blockage and stop. Full scenario matrix in
   `docs/capacidades-playwright.md`. Climb only when the previous rung fails.
-- **R4 requires a multimodal model.** The default `mimo-v2.6-flash-free` is
-  text-only; the skill probes this once at startup and skips R4 if the model
-  cannot read images.
+- **R4 / image understanding delegates to `exam-vision`.** A browser
+  screenshot requires a multimodal subagent; if capture fails, do not guess.
 
 ## Skill structure (keep it small)
 `SKILL.md` is the core flow and is read on **every** invocation, so keep it
@@ -48,7 +47,8 @@ exams break too.
 ## Browser
 - The MCP server launches Brave through `scripts/playwright-mcp-brave.sh`.
 - Use the dedicated persistent profile under `runtime/brave-profile/` so the user's normal Brave profile is not locked or modified.
-- Playwright MCP runs headed by default with all capabilities enabled (vision, testing, network, storage, devtools, pdf, config); vision mode is the fallback for pages whose accessibility tree does not expose an interactive element. Capability override: `PW_CAPS` env var in `scripts/playwright-mcp-brave.sh`.
+- Playwright MCP runs **headless by default**, preserving desktop focus. Optional visible mode: `PW_BROWSER_MODE=visible`; monitoring without taking focus: `npm run watch` and open the printed localhost URL. A dedicated loopback CDP port supports this read-only screenshot viewer.
+- Capabilities enabled: vision, testing, network, storage, devtools, pdf, config; capability override: `PW_CAPS` environment variable.
 
 ## Interaction strategy
 1. Prefer `browser_snapshot` / accessibility data first. This is normally cheaper and more reliable than screenshots.

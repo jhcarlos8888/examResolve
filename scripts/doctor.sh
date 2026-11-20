@@ -3,6 +3,11 @@ set -euo pipefail
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$ROOT_DIR"
 
+# OpenCode instalado en ~/.opencode/bin puede no estar en PATH de servicios no interactivos.
+if ! command -v opencode >/dev/null 2>&1 && [[ -x "$HOME/.opencode/bin/opencode" ]]; then
+  export PATH="$HOME/.opencode/bin:$PATH"
+fi
+
 ok=0
 fail=0
 warn=0
@@ -54,16 +59,21 @@ fi
 
 if node -e '
   const c = JSON.parse(require("fs").readFileSync("opencode.json","utf8"));
-  const p = c.mcp && c.mcp.playwright;
-  if (!p) { console.error("falta mcp.playwright"); process.exit(1); }
-  if (p.enabled !== true) { console.error("mcp.playwright no está enabled"); process.exit(1); }
-  if (!p.command || !Array.isArray(p.command)) { console.error("mcp.playwright sin command"); process.exit(1); }
-  if ((p.timeout ?? 0) < 30000) { console.error("timeout del MCP < 30000 ms: el primer npx puede tardar más"); process.exit(1); }
-  if (!c.model) { console.error("sin model fijado"); process.exit(1); }
+  const p = c.mcp?.servers?.playwright;
+  if (!p) { console.error("falta mcp.servers.playwright"); process.exit(1); }
+  if (p.disabled === true) { console.error("playwright deshabilitado"); process.exit(1); }
+  if (!Array.isArray(p.command) || p.command.length < 2) { console.error("sin comando MCP"); process.exit(1); }
+  if ((p.timeout?.catalog ?? 0) < 30000 || (p.timeout?.execution ?? 0) < 30000) {
+    console.error("timeout MCP insuficiente"); process.exit(1);
+  }
+  if (c.model !== "opencode-go/deepseek-v4.1-flash" || c.default_agent !== "exam-operator") {
+    console.error("modelo o agente principal no esperado"); process.exit(1);
+  }
+  if (!Array.isArray(c.permissions)) { console.error("permisos v2 ausentes"); process.exit(1); }
 ' 2>/dev/null; then
-  pass "mcp.playwright enabled, con command y timeout >= 30s"
+  pass "mcp.servers.playwright habilitado, V2 y timeouts de 60 s"
 else
-  bad "mcp.playwright mal configurado (enabled/command/timeout>=30000)"
+  bad "mcp.servers.playwright mal configurado (OpenCode V2)"
 fi
 
 if [[ -f tsconfig.json ]]; then
@@ -102,7 +112,7 @@ for s in resolve.sh run.sh playwright-mcp-brave.sh doctor.sh install-browser.sh;
   fi
 done
 
-for s in recon.mjs smoke.mjs; do
+for s in recon.mjs smoke.mjs watch-browser.mjs browser-regression.mjs mcp-regression.mjs; do
   if [[ -f "scripts/$s" ]]; then
     pass "scripts/$s"
   else
@@ -122,6 +132,10 @@ echo
 echo "== Piezas de la skill =="
 for f in .opencode/skills/exam-resolver/SKILL.md \
          .opencode/command/resolver.md \
+         .opencode/agents/exam-operator.md \
+         .opencode/agents/exam-reviewer.md \
+         .opencode/agents/exam-vision.md \
+         scripts/monitor.html \
          docs/capacidades-playwright.md; do
   if [[ -f "$f" ]]; then pass "$f"; else bad "$f ausente"; fi
 done

@@ -61,24 +61,22 @@ originaron están en `docs/pruebas-reales.md` → "Errores del agente — no rep
 Detalle completo de las 3 reglas duras y de los hallazgos V60-V69:
 `references/dexway.md`.
 
-## Comprobación previa: ¿tu modelo ve imágenes?
+## Modelos especializados y delegación automática
 
-**Hazla UNA vez, al principio, antes de tocar nada.** Es una prueba de 1
-llamada y decide si toda la ruta visual (R4) existe o no:
+`exam-operator` usa DeepSeek Flash; delega a un subagente y espera su respuesta
+sin sustituir el modelo de la sesión principal.
 
-```text
-browser_take_screenshot  →  ¿el modelo lee la imagen?
-```
+- **Pregunta que necesita ver una fotografía, SVG, canvas, fórmula renderizada,
+  tabla como imagen o gráfica:** invoca `exam-vision`
+  (`opencode/nemotron-3.5-super-vl-free`) con pregunta, opciones y contexto.
+  Captura vía Playwright MCP compartido. Espera antes de responder.
+- **Pregunta textual ambigua, técnica o de razonamiento difícil:** consulta
+  `exam-reviewer` (`opencode-go/glm-5.3-flash`); verifica la selección.
+- **Texto claro:** DeepSeek responde sin llamadas extra.
+- Si una captura no llega al subagente o la imagen sigue ilegible, aplica R5,
+  no inventes. `--caps vision` habilita clics gráficos, NO interpreta imágenes.
 
-| Resultado | Significado | Qué hacer |
-| --- | --- | --- |
-| Lees la imagen | Eres multimodal | R4 (Vision Mode) disponible: úsala en canvas, diagramas y opciones gráficas |
-| Error tipo *"Cannot read image"* | Eres **texto-only** | **R4 no existe.** No reintentes capturas ni subas a visión. Extrae `alt`/`title`/`src`/`figcaption` vía `browser_evaluate` y, si la pregunta es 100% visual, aplica **R5**: repórtala y ofrece cambiar de modelo (`./scripts/run.sh --model <multimodal>`) |
-
-El modelo por defecto del proyecto (`zen-proxy/mimo-v2.6-flash-free`) es
-**texto-only**: la prueba devolverá error y la ruta visual queda descartada de
-entrada. No dediques llamadas a `browser_take_screenshot` si ya lo sabes. Detalle
-en `references/audio-y-visual.md` (hallazgo V1).
+Detalle y ruta de captura: `references/audio-y-visual.md`.
 
 ## Modos de operación
 
@@ -223,7 +221,7 @@ Para cada pregunta:
 | Select | `browser_select_option` con el valor/etiqueta elegido |
 | Verdadero/Falso | Como radio (2 opciones) |
 | Texto corto | `browser_type` con la respuesta; no rellenes si dudas de formato |
-| **Opciones con imágenes** | Extrae `alt`/`title`/`src` vía `browser_evaluate`. Sin texto legible → R4 si eres multimodal, si no R5 (ver `references/audio-y-visual.md`) |
+| **Opciones con imágenes** | Delegar a `exam-vision` para lectura visual real; R5 solo si la captura falla o no es interpretable (ver `references/audio-y-visual.md`) |
 | **Pregunta en canvas/SVG** | El snapshot no expone el contenido: R4 visión (solo multimodal), o R5. Verifica por estado JS o por captura antes/después |
 | Drag & drop / ordenar | Ruta visión: `browser_mouse_drag_xy` con coordenadas |
 | **Audio / listening** | Transcript → TTS hook → R5. Escalera completa en `references/audio-y-visual.md` |
@@ -303,41 +301,9 @@ volcados cambian en cada sesión: nunca los reutilices como selectores.
 
 ## Patrones generales: los que más cuestan
 
-Detalle completo en `references/patrones-comunes.md`.
-
-1. **Matching exacto de opciones**: compara con `===`, nunca `includes()`
-   (`includes('String')` también matchea `myString`).
-2. **Solo elementos visibles**: filtra con `e.offsetParent !== null` y quédate
-   con el elemento más corto/específico. Sin esto eliges la opción de la
-   pregunta anterior, que sigue en el DOM pero oculta.
-3. **Índice de opción por grupo**, nunca global: algunas webs barajan las
-   opciones en cada pregunta.
-4. **Batch por JS** cuando haya muchos clicks: los overlays de anuncios
-   bloquean `browser_click` y provocan timeouts. Marca con `browser_evaluate` y
-   verifica `checked` **en la misma respuesta**.
-5. **Setter nativo + eventos** para `input`/`textarea`/`select`: los frameworks
-   ignoran `el.value = x`. Usa
-   `Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value').set.call(el, v)`
-   y dispara `input` + `change`.
-6. **Timers**: busca un selector de configuración ("No Timer") antes de empezar;
-   si no se puede desactivar, responde en ciclos rápidos de varias preguntas
-   por llamada.
-7. **Modales que se comen el resultado**: tras enviar, busca diálogos de
-   confirmación ("Submit Your Test?") y ciérralos, o el score queda en 0.
-8. **Ruido de ads ≠ bloqueo**: decenas de errores de consola de trackers no
-   son un fallo del sitio. Los bloqueos reales son `403/451` de la propia
-   página, `Attention Required | Cloudflare` o un challenge → R5.
-9. **Claves expuestas por el propio sitio**: `window.ANSWERS`,
-   `<script type="application/ld+json">` con `@type: Question` o un
-   `data.js` con `answers[]` marcado `"correct"`. Úsalas (las recibe cualquier
-   visitante), matcheando por **texto de pregunta** y menciónalo en el reporte.
-   Incluye la **revisión de un intento previo** del usuario (p. ej. Moodle
-   `review.php`): da veredicto por pregunta y el orden se mantiene entre
-   intentos — repite las acertadas y descarta las falladas (V81).
-10. **Murallas y trampas de negocio**: login required (pide login manual al
-    usuario, nunca credenciales), paywall/anuncios (no los mires ni pagues,
-    lee el score del DOM antes del modal) y "apuntes" sin envío (no es un
-    examen, dilo).
+Carga `references/patrones-comunes.md` para matching exacto,
+visibilidad, setters, frameworks, temporizadores, modales y
+verificación de respuestas. No dupliques aquí sus 10 reglas.
 
 ## Dispatcher de motores
 
@@ -363,8 +329,8 @@ R1 browser_snapshot → R2 browser_find → R3 browser_evaluate / run_code_unsaf
    → R4 visión (screenshot + coordenadas) → R5 reportar bloqueo y parar
 ```
 
-Sube un escalón solo si el anterior falla. R4 solo existe si eres multimodal
-(comprobación previa). Detalle completo en `docs/capacidades-playwright.md`.
+Sube un escalón solo si el anterior falla. R4 requiere delegar el análisis visual a `exam-vision` cuando el principal no
+pueda interpretar capturas. Detalle en `docs/capacidades-playwright.md`.
 
 ### Dos reglas de herramienta que evitan cagarla (V86)
 
